@@ -2,6 +2,14 @@
 
 Browser-only app for analyzing Korean high school internal grades.
 
+## Public Site
+
+GitHub Pages URL:
+
+`https://deolux311.github.io/Visual-Project/`
+
+This project is a static site and does not require Node packages or a build step.
+
 ## How to Run
 
 Open `index.html` in a browser.
