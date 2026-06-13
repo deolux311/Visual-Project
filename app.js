@@ -296,6 +296,7 @@ function renderTrendMatrix(rows, keyFactory, head, body, emptyLabel) {
     <tr>
       <th>${emptyLabel}</th>
       ${semesters.map((semester) => `<th>${semester}</th>`).join("")}
+      <th>\uc804\uccb4 \ud3c9\uade0</th>
       <th>\ucd94\uc774</th>
     </tr>
   `;
@@ -303,7 +304,7 @@ function renderTrendMatrix(rows, keyFactory, head, body, emptyLabel) {
 
   if (!keys.length) {
     const row = document.createElement("tr");
-    row.innerHTML = `<td colspan="8" class="empty-cell">${text.noTrendData}</td>`;
+    row.innerHTML = `<td colspan="9" class="empty-cell">${text.noTrendData}</td>`;
     body.append(row);
     return 0;
   }
@@ -314,16 +315,30 @@ function renderTrendMatrix(rows, keyFactory, head, body, emptyLabel) {
     const statMap = new Map(stats.map((stat) => [stat.key, stat.average]));
     const values = semesters.map((semester) => statMap.get(semester));
     const existing = values.filter((value) => Number.isFinite(value));
+    const totalAverage = weightedAverage(filtered);
     const status = existing.length >= 2 ? trendState(existing[0], existing.at(-1)) : "-";
     const row = document.createElement("tr");
 
     row.innerHTML = `
       <th>${key}</th>
       ${values.map((value) => `<td>${Number.isFinite(value) ? value.toFixed(2) : "-"}</td>`).join("")}
+      <td class="total-average">${gradeLabel(totalAverage)}</td>
       <td><span class="trend-badge">${status}</span></td>
     `;
     body.append(row);
   });
+
+  const totals = semesters.map((semester) => weightedAverage(rows.filter((row) => `${row.year}-${row.semester}` === semester)));
+  const overallAverage = weightedAverage(rows);
+  const totalRow = document.createElement("tr");
+  totalRow.className = "matrix-total-row";
+  totalRow.innerHTML = `
+    <th>\uc804\uccb4 \ud3c9\uade0</th>
+    ${totals.map((value) => `<td>${Number.isFinite(value) ? value.toFixed(2) : "-"}</td>`).join("")}
+    <td class="total-average">${gradeLabel(overallAverage)}</td>
+    <td>-</td>
+  `;
+  body.append(totalRow);
 
   return keys.length;
 }

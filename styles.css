@@ -480,7 +480,7 @@ li + li {
 }
 
 .trend-matrix {
-  min-width: 540px;
+  min-width: 640px;
 }
 
 .average-table {
@@ -525,6 +525,18 @@ li + li {
 .average-table td:nth-child(3) {
   color: var(--blue);
   font-weight: 800;
+}
+
+.total-average,
+.matrix-total-row th,
+.matrix-total-row td {
+  background: #f8fafc;
+  color: var(--accent-strong);
+  font-weight: 900;
+}
+
+.matrix-total-row th:first-child {
+  background: #f8fafc;
 }
 
 .diff-strong {
@@ -604,7 +616,7 @@ li + li {
   }
 
   .trend-matrix {
-    min-width: 500px;
+    min-width: 600px;
   }
 
   .average-table {
