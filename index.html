@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>&#45236;&#49888; &#49457;&#51201; &#48516;&#49437;</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app">
+    <section class="workspace">
+      <aside class="panel summary-panel" aria-label="&#49457;&#51201; &#50836;&#50557;">
+        <div class="brand">
+          <div>
+            <p class="eyebrow">High School GPA Lab</p>
+            <h1>&#45236;&#49888; &#49457;&#51201; &#48516;&#49437;</h1>
+          </div>
+          <button class="icon-button" id="resetButton" type="button" title="&#52488;&#44592;&#54868;" aria-label="&#52488;&#44592;&#54868;">
+            <span aria-hidden="true">&#8634;</span>
+          </button>
+        </div>
+
+        <div class="student-card">
+          <label for="studentName">&#54617;&#49373; &#51060;&#47492;</label>
+          <input id="studentName" type="text" value="&#44608;&#54616;&#45720;" autocomplete="off">
+        </div>
+
+        <div class="metric-grid">
+          <article class="metric">
+            <span>&#44032;&#51473; &#54217;&#44512;</span>
+            <strong id="weightedAverage">-</strong>
+          </article>
+          <article class="metric">
+            <span>&#52509; &#51060;&#49688; &#45800;&#50948;</span>
+            <strong id="totalCredits">-</strong>
+          </article>
+          <article class="metric">
+            <span>&#52572;&#44256; &#44284;&#47785;</span>
+            <strong id="bestSubject">-</strong>
+          </article>
+          <article class="metric">
+            <span>&#44288;&#47532; &#54596;&#50836;</span>
+            <strong id="weakSubject">-</strong>
+          </article>
+        </div>
+
+        <div class="panel-block">
+          <div class="block-header">
+            <h2>&#54617;&#44592;&#48324; &#52628;&#51060;</h2>
+            <span id="trendText">-</span>
+          </div>
+          <div class="chart" id="semesterChart" aria-label="&#54617;&#44592;&#48324; &#54217;&#44512; &#46321;&#44553; &#44536;&#47000;&#54532;"></div>
+        </div>
+
+        <div class="panel-block">
+          <div class="block-header">
+            <h2>&#47785;&#54364; &#49884;&#48044;&#47112;&#51060;&#49496;</h2>
+          </div>
+          <label for="targetGrade">&#47785;&#54364; &#54217;&#44512; &#46321;&#44553;</label>
+          <div class="target-row">
+            <input id="targetGrade" type="number" min="1" max="9" step="0.1" value="2.5">
+            <span id="targetResult">-</span>
+          </div>
+        </div>
+      </aside>
+
+      <section class="panel table-panel" aria-label="&#44284;&#47785;&#48324; &#49457;&#51201; &#51077;&#47141;">
+        <div class="toolbar">
+          <div>
+            <p class="eyebrow">Subject Records</p>
+            <h2>&#44284;&#47785;&#48324; &#49457;&#51201;</h2>
+          </div>
+          <div class="toolbar-actions">
+            <button id="addRowButton" type="button">+ &#44284;&#47785; &#52628;&#44032;</button>
+            <button id="sampleButton" type="button">&#50696;&#49884; &#48520;&#47084;&#50724;&#44592;</button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>&#54617;&#45380;</th>
+                <th>&#54617;&#44592;</th>
+                <th>&#44368;&#44284;&#44400;</th>
+                <th>&#44284;&#47785;</th>
+                <th>&#45800;&#50948;&#49688;</th>
+                <th>&#46321;&#44553;</th>
+                <th>&#50896;&#51216;&#49688;</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="gradeRows"></tbody>
+          </table>
+        </div>
+
+        <section class="insight-grid">
+          <article>
+            <h3>&#44368;&#44284;&#44400;&#48324; &#48516;&#49437;</h3>
+            <div id="subjectGroupList" class="list"></div>
+          </article>
+          <article>
+            <h3>&#51204;&#47029; &#47700;&#47784;</h3>
+            <ul id="insightList"></ul>
+          </article>
+        </section>
+
+        <section class="trend-panel" aria-label="&#44284;&#47785;&#183;&#44368;&#44284;&#44400;&#48324; &#54617;&#44592;&#48324; &#52628;&#51060;">
+          <div class="trend-toolbar">
+            <div>
+              <p class="eyebrow">Trend Detail</p>
+              <h3>&#44284;&#47785;&#183;&#44368;&#44284;&#44400;&#48324; &#54617;&#44592;&#48324; &#52628;&#51060;</h3>
+            </div>
+            <div class="trend-controls">
+              <label>
+                <span>&#48372;&#44592; &#44592;&#51456;</span>
+                <select id="trendMode">
+                  <option value="subject">&#44284;&#47785;</option>
+                  <option value="category">&#44368;&#44284;&#44400;</option>
+                </select>
+              </label>
+              <label>
+                <span>&#54637;&#47785;</span>
+                <select id="trendItem"></select>
+              </label>
+            </div>
+          </div>
+          <div class="detail-chart" id="detailTrendChart" aria-label="&#49440;&#53469;&#54620; &#54637;&#47785;&#51032; &#54617;&#44592;&#48324; &#46321;&#44553; &#52628;&#51060;"></div>
+          <div class="trend-summary" id="detailTrendSummary">-</div>
+        </section>
+      </section>
+    </section>
+  </main>
+
+  <template id="rowTemplate">
+    <tr>
+      <td>
+        <select class="grade-year" aria-label="&#54617;&#45380;">
+          <option>1</option>
+          <option>2</option>
+          <option>3</option>
+        </select>
+      </td>
+      <td>
+        <select class="semester" aria-label="&#54617;&#44592;">
+          <option>1</option>
+          <option>2</option>
+        </select>
+      </td>
+      <td>
+        <select class="category" aria-label="&#44368;&#44284;&#44400;">
+          <option value="&#44397;&#50612;">&#44397;&#50612;</option>
+          <option value="&#49688;&#54617;">&#49688;&#54617;</option>
+          <option value="&#50689;&#50612;">&#50689;&#50612;</option>
+          <option value="&#49324;&#54924;">&#49324;&#54924;</option>
+          <option value="&#44284;&#54617;">&#44284;&#54617;</option>
+          <option value="&#54620;&#44397;&#49324;">&#54620;&#44397;&#49324;</option>
+          <option value="&#44592;&#49696;&#183;&#44032;&#51221;">&#44592;&#49696;&#183;&#44032;&#51221;</option>
+          <option value="&#50696;&#52404;&#45733;">&#50696;&#52404;&#45733;</option>
+          <option value="&#51228;2&#50808;&#44397;&#50612;">&#51228;2&#50808;&#44397;&#50612;</option>
+          <option value="&#54620;&#47928;">&#54620;&#47928;</option>
+          <option value="&#44592;&#53440;">&#44592;&#53440;</option>
+        </select>
+      </td>
+      <td><input class="subject" type="text" aria-label="&#44284;&#47785;"></td>
+      <td><input class="credits" type="number" min="1" max="8" step="1" aria-label="&#45800;&#50948;&#49688;"></td>
+      <td><input class="rank" type="number" min="1" max="9" step="1" aria-label="&#46321;&#44553;"></td>
+      <td><input class="score" type="number" min="0" max="100" step="1" aria-label="&#50896;&#51216;&#49688;"></td>
+      <td><button class="delete-row" type="button" title="&#49325;&#51228;" aria-label="&#49325;&#51228;">&times;</button></td>
+    </tr>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
