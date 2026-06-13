@@ -28,10 +28,25 @@ jobs:
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build static site
+        run: npm run build
+
+      - name: Keep Next assets on Pages
+        run: touch out/.nojekyll
+
       - name: Upload static files
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: out
 
       - name: Deploy to GitHub Pages
         id: deployment
