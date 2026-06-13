@@ -163,6 +163,7 @@ h3 {
 .student-card,
 .panel-block,
 .insight-grid article,
+.average-panel,
 .trend-panel {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -388,6 +389,7 @@ li + li {
   margin-top: 8px;
 }
 
+.average-panel,
 .trend-panel {
   margin: 0 24px 24px;
   padding: 16px;
@@ -417,6 +419,19 @@ li + li {
   margin-top: 18px;
   border-top: 1px solid var(--line);
   padding-top: 16px;
+}
+
+.average-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 18px;
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+}
+
+.average-grid article {
+  min-width: 0;
 }
 
 .trend-matrix-grid article {
@@ -452,16 +467,39 @@ li + li {
   min-width: 560px;
 }
 
+.average-table {
+  min-width: 620px;
+}
+
 .trend-matrix th,
-.trend-matrix td {
+.trend-matrix td,
+.average-table th,
+.average-table td {
   padding: 9px 10px;
   text-align: center;
 }
 
 .trend-matrix th:first-child,
-.trend-matrix td:first-child {
+.trend-matrix td:first-child,
+.average-table th:first-child,
+.average-table td:first-child {
   width: 116px;
   text-align: left;
+}
+
+.average-table td:nth-child(2) {
+  color: var(--accent-strong);
+  font-weight: 800;
+}
+
+.average-table td:nth-child(3) {
+  color: var(--blue);
+  font-weight: 800;
+}
+
+.diff-strong {
+  color: var(--rose);
+  font-weight: 800;
 }
 
 .trend-badge {
@@ -486,6 +524,7 @@ li + li {
 @media (max-width: 980px) {
   .workspace,
   .insight-grid,
+  .average-grid,
   .trend-matrix-grid {
     grid-template-columns: 1fr;
   }
@@ -510,6 +549,7 @@ li + li {
     padding: 16px;
   }
 
+  .average-panel,
   .trend-panel {
     margin: 0 16px 16px;
   }

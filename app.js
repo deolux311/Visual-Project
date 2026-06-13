@@ -42,6 +42,14 @@ const selectors = {
   groupList: document.querySelector("#subjectGroupList"),
   insightList: document.querySelector("#insightList"),
   targetResult: document.querySelector("#targetResult"),
+  categoryAverageHead: document.querySelector("#categoryAverageHead"),
+  categoryAverageBody: document.querySelector("#categoryAverageBody"),
+  subjectAverageHead: document.querySelector("#subjectAverageHead"),
+  subjectAverageBody: document.querySelector("#subjectAverageBody"),
+  semesterAverageHead: document.querySelector("#semesterAverageHead"),
+  semesterAverageBody: document.querySelector("#semesterAverageBody"),
+  yearAverageHead: document.querySelector("#yearAverageHead"),
+  yearAverageBody: document.querySelector("#yearAverageBody"),
   detailTrendSummary: document.querySelector("#detailTrendSummary"),
   categoryTrendHead: document.querySelector("#categoryTrendHead"),
   categoryTrendBody: document.querySelector("#categoryTrendBody"),
@@ -99,6 +107,27 @@ function byWeightedAverage(rows, keyFactory) {
     average: value.points / value.credits,
     credits: value.credits,
     rows: value.rows
+  }));
+}
+
+function byAverageComparison(rows, keyFactory) {
+  const groups = new Map();
+  rows.forEach((row) => {
+    const key = keyFactory(row);
+    const existing = groups.get(key) ?? { credits: 0, weightedPoints: 0, rankTotal: 0, count: 0 };
+    existing.credits += row.credits;
+    existing.weightedPoints += row.rank * row.credits;
+    existing.rankTotal += row.rank;
+    existing.count += 1;
+    groups.set(key, existing);
+  });
+
+  return [...groups.entries()].map(([key, value]) => ({
+    key,
+    weightedAverage: value.weightedPoints / value.credits,
+    simpleAverage: value.rankTotal / value.count,
+    credits: value.credits,
+    count: value.count
   }));
 }
 
@@ -169,6 +198,85 @@ function updateGroups(rows) {
     `;
     selectors.groupList.append(row);
   });
+}
+
+function renderAverageTable(rows, keyFactory, head, body, label, preferredOrder = []) {
+  head.innerHTML = `
+    <tr>
+      <th>${label}</th>
+      <th>\ub2e8\uc704\uc218 \uc801\uc6a9</th>
+      <th>\ub2e8\uc704\uc218 \ubbf8\uc801\uc6a9</th>
+      <th>\ucc28\uc774</th>
+      <th>\ub2e8\uc704</th>
+      <th>\uac74\uc218</th>
+    </tr>
+  `;
+  body.innerHTML = "";
+
+  const orderMap = new Map(preferredOrder.map((item, index) => [item, index]));
+  const stats = byAverageComparison(rows, keyFactory)
+    .sort((a, b) => {
+      const aOrder = orderMap.has(a.key) ? orderMap.get(a.key) : Number.MAX_SAFE_INTEGER;
+      const bOrder = orderMap.has(b.key) ? orderMap.get(b.key) : Number.MAX_SAFE_INTEGER;
+      return aOrder - bOrder || a.key.localeCompare(b.key);
+    });
+
+  if (!stats.length) {
+    const row = document.createElement("tr");
+    row.innerHTML = `<td colspan="6" class="empty-cell">\ud45c\uc2dc\ud560 \ud3c9\uade0 \ub370\uc774\ud130\uac00 \uc5c6\uc2b5\ub2c8\ub2e4.</td>`;
+    body.append(row);
+    return;
+  }
+
+  stats.forEach((stat) => {
+    const diff = stat.weightedAverage - stat.simpleAverage;
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <th>${stat.key}</th>
+      <td>${stat.weightedAverage.toFixed(2)}</td>
+      <td>${stat.simpleAverage.toFixed(2)}</td>
+      <td class="${Math.abs(diff) >= 0.1 ? "diff-strong" : ""}">${diff >= 0 ? "+" : ""}${diff.toFixed(2)}</td>
+      <td>${stat.credits}</td>
+      <td>${stat.count}</td>
+    `;
+    body.append(row);
+  });
+}
+
+function updateAverageSummary(rows) {
+  const semesters = ["1-1", "1-2", "2-1", "2-2", "3-1", "3-2"];
+  const years = ["1", "2", "3"];
+
+  renderAverageTable(
+    rows,
+    (row) => row.category,
+    selectors.categoryAverageHead,
+    selectors.categoryAverageBody,
+    "\uad50\uacfc\uad70"
+  );
+  renderAverageTable(
+    rows,
+    (row) => row.subject,
+    selectors.subjectAverageHead,
+    selectors.subjectAverageBody,
+    "\uacfc\ubaa9"
+  );
+  renderAverageTable(
+    rows,
+    (row) => `${row.year}-${row.semester}`,
+    selectors.semesterAverageHead,
+    selectors.semesterAverageBody,
+    "\ud559\uae30",
+    semesters
+  );
+  renderAverageTable(
+    rows,
+    (row) => row.year,
+    selectors.yearAverageHead,
+    selectors.yearAverageBody,
+    "\ud559\ub144",
+    years
+  );
 }
 
 function trendState(first, last) {
@@ -308,6 +416,7 @@ function updateAnalysis() {
   updateMetrics(rows, average);
   updateChart(rows);
   updateGroups(rows);
+  updateAverageSummary(rows);
   updateDetailTrend(rows);
   updateInsights(rows, average ?? 0);
   updateTarget(rows, average ?? 0);

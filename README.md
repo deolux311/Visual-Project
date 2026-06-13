@@ -16,6 +16,7 @@ Open `index.html` in a browser.
 - Manual curriculum category classification per subject
 - Curriculum category average analysis
 - At-a-glance subject and curriculum category semester trend matrices
+- Category, subject, semester, and year averages with weighted and unweighted comparison
 - Target average grade simulation
 - Automatic strategy notes
 
