@@ -6,8 +6,7 @@ const text = {
   improving: "\uc0c1\uc2b9\uc138",
   caution: "\uc8fc\uc758",
   stable: "\uc548\uc815",
-  noTrendItems: "\ud45c\uc2dc\ud560 \ud56d\ubaa9 \uc5c6\uc74c",
-  noTrendData: "\uc120\ud0dd\ud55c \ud56d\ubaa9\uc758 \ud559\uae30\ubcc4 \ub370\uc774\ud130\uac00 \uc5c6\uc2b5\ub2c8\ub2e4.",
+  noTrendData: "\ud45c\uc2dc\ud560 \ud559\uae30\ubcc4 \ucd94\uc774 \ub370\uc774\ud130\uac00 \uc5c6\uc2b5\ub2c8\ub2e4.",
   noGroups: "\uacfc\ubaa9\uc744 \ucd94\uac00\ud558\uba74 \uad50\uacfc\uad70\ubcc4 \ubd84\uc11d\uc774 \ud45c\uc2dc\ub429\ub2c8\ub2e4.",
   noRows: "\uc131\uc801 \ub370\uc774\ud130\ub97c \uc785\ub825\ud558\uba74 \uc790\ub3d9\uc73c\ub85c \uc804\ub7b5 \uba54\ubaa8\uac00 \uc0dd\uc131\ub429\ub2c8\ub2e4.",
   targetReached: "\ud604\uc7ac \ubaa9\ud45c \ub2ec\uc131\uad8c",
@@ -43,10 +42,11 @@ const selectors = {
   groupList: document.querySelector("#subjectGroupList"),
   insightList: document.querySelector("#insightList"),
   targetResult: document.querySelector("#targetResult"),
-  trendMode: document.querySelector("#trendMode"),
-  trendItem: document.querySelector("#trendItem"),
-  detailTrendChart: document.querySelector("#detailTrendChart"),
-  detailTrendSummary: document.querySelector("#detailTrendSummary")
+  detailTrendSummary: document.querySelector("#detailTrendSummary"),
+  categoryTrendHead: document.querySelector("#categoryTrendHead"),
+  categoryTrendBody: document.querySelector("#categoryTrendBody"),
+  subjectTrendHead: document.querySelector("#subjectTrendHead"),
+  subjectTrendBody: document.querySelector("#subjectTrendBody")
 };
 
 function addRow(data = {}) {
@@ -171,74 +171,73 @@ function updateGroups(rows) {
   });
 }
 
-function trendKeyForMode(row, mode) {
-  return mode === "category" ? row.category : row.subject;
+function trendState(first, last) {
+  const diff = last - first;
+  if (diff < -0.15) return text.improving;
+  if (diff > 0.15) return text.caution;
+  return text.stable;
 }
 
-function updateTrendOptions(rows) {
-  const mode = selectors.trendMode.value;
-  const previous = selectors.trendItem.value;
-  const items = [...new Set(rows.map((row) => trendKeyForMode(row, mode)))]
+function renderTrendMatrix(rows, keyFactory, head, body, emptyLabel) {
+  const semesters = ["1-1", "1-2", "2-1", "2-2", "3-1", "3-2"];
+  const keys = [...new Set(rows.map(keyFactory))]
     .filter(Boolean)
     .sort((a, b) => a.localeCompare(b));
 
-  selectors.trendItem.innerHTML = "";
-  if (!items.length) {
-    const option = document.createElement("option");
-    option.value = "";
-    option.textContent = text.noTrendItems;
-    selectors.trendItem.append(option);
-    return;
+  head.innerHTML = `
+    <tr>
+      <th>${emptyLabel}</th>
+      ${semesters.map((semester) => `<th>${semester}</th>`).join("")}
+      <th>\ucd94\uc774</th>
+    </tr>
+  `;
+  body.innerHTML = "";
+
+  if (!keys.length) {
+    const row = document.createElement("tr");
+    row.innerHTML = `<td colspan="8" class="empty-cell">${text.noTrendData}</td>`;
+    body.append(row);
+    return 0;
   }
 
-  items.forEach((item) => {
-    const option = document.createElement("option");
-    option.value = item;
-    option.textContent = item;
-    selectors.trendItem.append(option);
+  keys.forEach((key) => {
+    const filtered = rows.filter((row) => keyFactory(row) === key);
+    const stats = byWeightedAverage(filtered, (row) => `${row.year}-${row.semester}`);
+    const statMap = new Map(stats.map((stat) => [stat.key, stat.average]));
+    const values = semesters.map((semester) => statMap.get(semester));
+    const existing = values.filter((value) => Number.isFinite(value));
+    const status = existing.length >= 2 ? trendState(existing[0], existing.at(-1)) : "-";
+    const row = document.createElement("tr");
+
+    row.innerHTML = `
+      <th>${key}</th>
+      ${values.map((value) => `<td>${Number.isFinite(value) ? value.toFixed(2) : "-"}</td>`).join("")}
+      <td><span class="trend-badge">${status}</span></td>
+    `;
+    body.append(row);
   });
 
-  selectors.trendItem.value = items.includes(previous) ? previous : items[0];
+  return keys.length;
 }
 
 function updateDetailTrend(rows) {
-  const mode = selectors.trendMode.value;
-  const item = selectors.trendItem.value;
-  const semesters = ["1-1", "1-2", "2-1", "2-2", "3-1", "3-2"];
-  const filtered = rows.filter((row) => trendKeyForMode(row, mode) === item);
-  const stats = byWeightedAverage(filtered, (row) => `${row.year}-${row.semester}`);
-  const statMap = new Map(stats.map((stat) => [stat.key, stat]));
-  const values = semesters.map((semester) => ({
-    semester,
-    value: statMap.get(semester)?.average
-  }));
-  const existing = values.filter((entry) => Number.isFinite(entry.value));
+  const categoryCount = renderTrendMatrix(
+    rows,
+    (row) => row.category,
+    selectors.categoryTrendHead,
+    selectors.categoryTrendBody,
+    "\uad50\uacfc\uad70"
+  );
+  const subjectCount = renderTrendMatrix(
+    rows,
+    (row) => row.subject,
+    selectors.subjectTrendHead,
+    selectors.subjectTrendBody,
+    "\uacfc\ubaa9"
+  );
 
-  selectors.detailTrendChart.innerHTML = "";
-
-  values.forEach((entry) => {
-    const height = entry.value ? `${Math.max(8, (10 - entry.value) * 10)}%` : "0";
-    const bar = document.createElement("div");
-    bar.className = "detail-bar";
-    bar.innerHTML = `
-      <span class="bar-value">${entry.value ? entry.value.toFixed(2) : "-"}</span>
-      <span class="bar-fill" style="height: ${height}"></span>
-      <span class="bar-label">${entry.semester}</span>
-    `;
-    selectors.detailTrendChart.append(bar);
-  });
-
-  if (!existing.length) {
-    selectors.detailTrendSummary.textContent = text.noTrendData;
-    return;
-  }
-
-  const first = existing[0];
-  const last = existing.at(-1);
-  const diff = last.value - first.value;
-  const direction = diff < -0.15 ? text.improving : diff > 0.15 ? text.caution : text.stable;
   selectors.detailTrendSummary.textContent =
-    `${item}: ${first.semester} ${first.value.toFixed(2)}${text.grade} -> ${last.semester} ${last.value.toFixed(2)}${text.grade} (${direction})`;
+    rows.length ? `\uad50\uacfc\uad70 ${categoryCount}\uac1c, \uacfc\ubaa9 ${subjectCount}\uac1c \ucd94\uc774 \ud45c\uc2dc` : text.noTrendData;
 }
 
 function updateInsights(rows, average) {
@@ -309,7 +308,6 @@ function updateAnalysis() {
   updateMetrics(rows, average);
   updateChart(rows);
   updateGroups(rows);
-  updateTrendOptions(rows);
   updateDetailTrend(rows);
   updateInsights(rows, average ?? 0);
   updateTarget(rows, average ?? 0);
@@ -338,7 +336,5 @@ selectors.rows.addEventListener("click", (event) => {
 });
 
 selectors.targetGrade.addEventListener("input", updateAnalysis);
-selectors.trendMode.addEventListener("change", updateAnalysis);
-selectors.trendItem.addEventListener("change", () => updateDetailTrend(getRows()));
 
 loadSample();

@@ -21,8 +21,37 @@
         </div>
 
         <div class="student-card">
-          <label for="studentName">&#54617;&#49373; &#51060;&#47492;</label>
-          <input id="studentName" type="text" value="&#44608;&#54616;&#45720;" autocomplete="off">
+          <div class="student-grid">
+            <label>
+              <span>&#54617;&#49373; &#51060;&#47492;</span>
+              <input id="studentName" type="text" value="&#44608;&#54616;&#45720;" autocomplete="off">
+            </label>
+            <label>
+              <span>&#51648;&#50669;</span>
+              <input id="studentRegion" type="text" value="&#49436;&#50872;" autocomplete="off">
+            </label>
+            <label>
+              <span>&#54617;&#44368;</span>
+              <input id="studentSchool" type="text" value="&#54620;&#48731;&#44256;&#46321;&#54617;&#44368;" autocomplete="off">
+            </label>
+            <label>
+              <span>&#54617;&#45380;</span>
+              <select id="studentGrade">
+                <option>1</option>
+                <option selected>2</option>
+                <option>3</option>
+              </select>
+            </label>
+            <label>
+              <span>&#49457;&#48324;</span>
+              <select id="studentGender">
+                <option>&#50668;&#49457;</option>
+                <option>&#45224;&#49457;</option>
+                <option>&#44592;&#53440;</option>
+                <option>&#51025;&#45813; &#50504; &#54632;</option>
+              </select>
+            </label>
+          </div>
         </div>
 
         <div class="metric-grid">
@@ -111,22 +140,34 @@
               <p class="eyebrow">Trend Detail</p>
               <h3>&#44284;&#47785;&#183;&#44368;&#44284;&#44400;&#48324; &#54617;&#44592;&#48324; &#52628;&#51060;</h3>
             </div>
-            <div class="trend-controls">
-              <label>
-                <span>&#48372;&#44592; &#44592;&#51456;</span>
-                <select id="trendMode">
-                  <option value="subject">&#44284;&#47785;</option>
-                  <option value="category">&#44368;&#44284;&#44400;</option>
-                </select>
-              </label>
-              <label>
-                <span>&#54637;&#47785;</span>
-                <select id="trendItem"></select>
-              </label>
-            </div>
+            <span id="detailTrendSummary">-</span>
           </div>
-          <div class="detail-chart" id="detailTrendChart" aria-label="&#49440;&#53469;&#54620; &#54637;&#47785;&#51032; &#54617;&#44592;&#48324; &#46321;&#44553; &#52628;&#51060;"></div>
-          <div class="trend-summary" id="detailTrendSummary">-</div>
+          <div class="trend-matrix-grid">
+            <article>
+              <div class="matrix-header">
+                <h4>&#44368;&#44284;&#44400;&#48324; &#52628;&#51060;</h4>
+                <span>&#45800;&#50948;&#49688; &#44032;&#51473; &#54217;&#44512;</span>
+              </div>
+              <div class="matrix-wrap">
+                <table class="trend-matrix">
+                  <thead id="categoryTrendHead"></thead>
+                  <tbody id="categoryTrendBody"></tbody>
+                </table>
+              </div>
+            </article>
+            <article>
+              <div class="matrix-header">
+                <h4>&#44284;&#47785;&#48324; &#52628;&#51060;</h4>
+                <span>&#54617;&#44592;&#48324; &#46321;&#44553; &#48320;&#54868;</span>
+              </div>
+              <div class="matrix-wrap">
+                <table class="trend-matrix">
+                  <thead id="subjectTrendHead"></thead>
+                  <tbody id="subjectTrendBody"></tbody>
+                </table>
+              </div>
+            </article>
+          </div>
         </section>
       </section>
     </section>

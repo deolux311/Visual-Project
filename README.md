@@ -9,12 +9,13 @@ Open `index.html` in a browser.
 ## Features
 
 - Weighted average grade based on credits
+- Student profile fields for region, school, grade, and gender
 - Total completed credits
 - Best and weakest subject detection
 - Semester trend chart
 - Manual curriculum category classification per subject
 - Curriculum category average analysis
-- Subject and curriculum category semester trend detail
+- At-a-glance subject and curriculum category semester trend matrices
 - Target average grade simulation
 - Automatic strategy notes
 
