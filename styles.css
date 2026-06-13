@@ -461,10 +461,26 @@ li + li {
   overflow: auto;
   border: 1px solid var(--line);
   border-radius: 8px;
+  scrollbar-color: #94a3b8 #e5e7eb;
+  scrollbar-width: thin;
+}
+
+.matrix-wrap::-webkit-scrollbar {
+  height: 10px;
+}
+
+.matrix-wrap::-webkit-scrollbar-track {
+  background: #e5e7eb;
+  border-radius: 999px;
+}
+
+.matrix-wrap::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 999px;
 }
 
 .trend-matrix {
-  min-width: 560px;
+  min-width: 540px;
 }
 
 .average-table {
@@ -483,8 +499,22 @@ li + li {
 .trend-matrix td:first-child,
 .average-table th:first-child,
 .average-table td:first-child {
-  width: 116px;
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  width: 128px;
+  min-width: 128px;
+  max-width: 128px;
+  background: #fff;
   text-align: left;
+  box-shadow: 1px 0 0 var(--line);
+  overflow-wrap: anywhere;
+}
+
+.trend-matrix thead th:first-child,
+.average-table thead th:first-child {
+  z-index: 4;
+  background: #f8fafc;
 }
 
 .average-table td:nth-child(2) {
@@ -571,5 +601,29 @@ li + li {
 
   .metric-grid {
     grid-template-columns: 1fr;
+  }
+
+  .trend-matrix {
+    min-width: 500px;
+  }
+
+  .average-table {
+    min-width: 560px;
+  }
+
+  .trend-matrix th,
+  .trend-matrix td,
+  .average-table th,
+  .average-table td {
+    padding: 8px 8px;
+  }
+
+  .trend-matrix th:first-child,
+  .trend-matrix td:first-child,
+  .average-table th:first-child,
+  .average-table td:first-child {
+    width: 104px;
+    min-width: 104px;
+    max-width: 104px;
   }
 }
