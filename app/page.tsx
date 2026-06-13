@@ -6,23 +6,26 @@ import Dashboard from "@/components/Dashboard";
 import Diagnosis from "@/components/Diagnosis";
 import GradeInputTable from "@/components/GradeInputTable";
 import GroupAnalysis from "@/components/GroupAnalysis";
+import MockExamReport from "@/components/MockExamReport";
 import SubjectAnalysis from "@/components/SubjectAnalysis";
 import TrendAnalysis from "@/components/TrendAnalysis";
 import { formatGrade, totalCredits, weightedAverage } from "@/lib/calculations";
-import { sampleGrades, sampleStudent } from "@/lib/sampleData";
-import type { GradeRecord, GradeScale, StudentInfo, StudentProfile } from "@/types/grade";
+import { sampleGrades, sampleMockExams, sampleStudent } from "@/lib/sampleData";
+import type { GradeRecord, GradeScale, MockExamRecord, ReportMode, StudentInfo, StudentProfile } from "@/types/grade";
 
-const STORAGE_KEY = "school-grade-analysis-v2";
-const LEGACY_STORAGE_KEY = "school-grade-analysis-v1";
+const STORAGE_KEY = "school-grade-analysis-v3";
+const LEGACY_KEYS = ["school-grade-analysis-v2", "school-grade-analysis-v1"];
 const GENDER_OPTIONS = ["여성", "남성", "기타", "응답 안 함"];
+const SCHOOL_TYPE_OPTIONS = ["일반고", "자사고", "특목고", "특성화고", "기타"];
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 export default function Page() {
-  const [profiles, setProfiles] = useState<StudentProfile[]>(() => [createProfile(sampleStudent, sampleGrades, 9)]);
+  const [profiles, setProfiles] = useState<StudentProfile[]>(() => [createProfile(sampleStudent, sampleGrades, sampleMockExams, 9)]);
   const [activeId, setActiveId] = useState<string>("");
+  const [reportMode, setReportMode] = useState<ReportMode>("grades");
 
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY) ?? localStorage.getItem(LEGACY_STORAGE_KEY);
+    const saved = [STORAGE_KEY, ...LEGACY_KEYS].map((key) => localStorage.getItem(key)).find(Boolean);
     if (!saved) {
       setActiveId((current) => current || profiles[0].id);
       return;
@@ -34,17 +37,19 @@ export default function Page() {
         activeId?: string;
         student?: StudentInfo;
         records?: GradeRecord[];
+        mockRecords?: MockExamRecord[];
         gradeScale?: GradeScale;
+        reportMode?: ReportMode;
       };
       const nextProfiles =
         parsed.profiles?.length
           ? parsed.profiles.map(normalizeProfile)
-          : [createProfile(normalizeStudent(parsed.student ?? sampleStudent), parsed.records ?? sampleGrades, parsed.gradeScale ?? 9)];
+          : [createProfile(normalizeStudent(parsed.student ?? sampleStudent), parsed.records ?? sampleGrades, parsed.mockRecords ?? sampleMockExams, parsed.gradeScale ?? 9)];
       setProfiles(nextProfiles);
       setActiveId(parsed.activeId && nextProfiles.some((profile) => profile.id === parsed.activeId) ? parsed.activeId : nextProfiles[0].id);
+      if (parsed.reportMode === "mock" || parsed.reportMode === "grades") setReportMode(parsed.reportMode);
     } catch {
-      localStorage.removeItem(STORAGE_KEY);
-      localStorage.removeItem(LEGACY_STORAGE_KEY);
+      [STORAGE_KEY, ...LEGACY_KEYS].forEach((key) => localStorage.removeItem(key));
       setActiveId(profiles[0].id);
     }
   }, []);
@@ -52,16 +57,17 @@ export default function Page() {
   const activeProfile = useMemo(() => profiles.find((profile) => profile.id === activeId) ?? profiles[0], [profiles, activeId]);
   const student = activeProfile.student;
   const records = activeProfile.records;
+  const mockRecords = activeProfile.mockRecords;
   const gradeScale = activeProfile.gradeScale;
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ profiles, activeId: activeProfile.id }));
-  }, [profiles, activeProfile.id]);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ profiles, activeId: activeProfile.id, reportMode }));
+  }, [profiles, activeProfile.id, reportMode]);
 
   const reportTitle = useMemo(() => {
     const name = student.name || "학생";
-    return `${name} 내신 성적 분석 리포트`;
-  }, [student.name]);
+    return reportMode === "grades" ? `${name} 내신 성적 분석 리포트` : `${name} 모의고사/수능 성적 분석 리포트`;
+  }, [student.name, reportMode]);
 
   function updateActiveProfile(updater: (profile: StudentProfile) => StudentProfile) {
     setProfiles((current) => current.map((profile) => (profile.id === activeProfile.id ? updater(profile) : profile)));
@@ -75,6 +81,10 @@ export default function Page() {
     updateActiveProfile((profile) => ({ ...profile, records: nextRecords }));
   }
 
+  function updateMockRecords(nextRecords: MockExamRecord[]) {
+    updateActiveProfile((profile) => ({ ...profile, mockRecords: nextRecords }));
+  }
+
   function updateGradeScale(nextScale: GradeScale) {
     updateActiveProfile((profile) => ({ ...profile, gradeScale: nextScale }));
   }
@@ -84,6 +94,7 @@ export default function Page() {
       ...profile,
       student: { ...sampleStudent },
       records: sampleGrades.map((record) => ({ ...record })),
+      mockRecords: sampleMockExams.map((record) => ({ ...record })),
       gradeScale: 9
     }));
   }
@@ -96,6 +107,7 @@ export default function Page() {
         analysisDate: new Date().toISOString().slice(0, 10)
       },
       [],
+      [],
       gradeScale
     );
     setProfiles((current) => [...current, newProfile]);
@@ -106,6 +118,7 @@ export default function Page() {
     const newProfile = createProfile(
       { ...student, name: `${student.name || "학생"} 복사본` },
       records.map((record) => ({ ...record, id: createId("record") })),
+      mockRecords.map((record) => ({ ...record, id: createId("mock") })),
       gradeScale
     );
     setProfiles((current) => [...current, newProfile]);
@@ -154,7 +167,11 @@ export default function Page() {
         <div className="report-card p-5">
           <p className="eyebrow">Selected Student</p>
           <h2 className="mt-1 text-2xl font-black text-ink">{student.name || "학생"} 리포트 작업 중</h2>
-          <p className="mt-2 text-sm font-medium text-muted">학생 목록에서 대상을 선택한 뒤 성적을 입력하면 각 학생별로 리포트가 따로 저장됩니다.</p>
+          <p className="mt-2 text-sm font-medium text-muted">학생 목록에서 대상을 선택한 뒤 내신과 모의고사/수능 리포트를 각각 입력하고 분석할 수 있습니다.</p>
+          <div className="mt-5 inline-flex rounded-lg border border-line bg-slate-50 p-1">
+            <button className={`rounded-md px-4 py-2 text-sm font-extrabold ${reportMode === "grades" ? "bg-white text-teal-750 shadow-sm" : "text-muted"}`} type="button" onClick={() => setReportMode("grades")}>내신 리포트</button>
+            <button className={`rounded-md px-4 py-2 text-sm font-extrabold ${reportMode === "mock" ? "bg-white text-teal-750 shadow-sm" : "text-muted"}`} type="button" onClick={() => setReportMode("mock")}>모의고사/수능 리포트</button>
+          </div>
         </div>
       </section>
 
@@ -163,9 +180,13 @@ export default function Page() {
           <div className="flex min-w-0 flex-1 flex-wrap items-start gap-5">
             <img className="h-14 w-auto object-contain print:h-12" src={`${BASE_PATH}/deolux-logo.png`} alt="DEOLUX 데오럭스 교육그룹" />
             <div className="min-w-0">
-              <p className="eyebrow">School Record Grade Lab</p>
+              <p className="eyebrow">{reportMode === "grades" ? "School Record Grade Lab" : "Mock Exam Score Lab"}</p>
               <h1 className="mt-1 text-3xl font-black tracking-normal text-ink">{reportTitle}</h1>
-              <p className="mt-2 text-sm font-medium text-muted">교과 성적을 입력하면 과목별 → 교과별 → 교과군별 → 성장추이 → 종합진단 순서로 자동 분석합니다.</p>
+              <p className="mt-2 text-sm font-medium text-muted">
+                {reportMode === "grades"
+                  ? "교과 성적을 입력하면 과목별 → 교과별 → 교과군별 → 성장추이 → 종합진단 순서로 자동 분석합니다."
+                  : "모의고사/수능 성적을 입력하면 영역별 → 시험별 추이 → 백분위/등급 → 종합진단 순서로 자동 분석합니다."}
+              </p>
             </div>
           </div>
           <div className="flex flex-wrap gap-2 print:hidden">
@@ -174,13 +195,15 @@ export default function Page() {
           </div>
         </div>
 
-        <section className="mt-6 grid grid-cols-2 gap-3 xl:grid-cols-9">
+        <section className="mt-6 grid grid-cols-2 gap-3 xl:grid-cols-11">
           <Field label="이름" value={student.name} onChange={(value) => updateStudent("name", value)} />
           <Field label="성별" value={student.gender} options={GENDER_OPTIONS} onChange={(value) => updateStudent("gender", value)} />
           <Field label="지역" value={student.region} onChange={(value) => updateStudent("region", value)} />
+          <Field label="학교 종류" value={student.schoolType} options={SCHOOL_TYPE_OPTIONS} onChange={(value) => updateStudent("schoolType", value)} />
           <Field label="학교" value={student.school} onChange={(value) => updateStudent("school", value)} />
           <Field label="학년" value={student.grade} onChange={(value) => updateStudent("grade", value)} />
           <Field label="계열" value={student.track} onChange={(value) => updateStudent("track", value)} />
+          <Field label="희망대학" value={student.targetUniversity} onChange={(value) => updateStudent("targetUniversity", value)} />
           <Field label="희망학과" value={student.targetMajor} onChange={(value) => updateStudent("targetMajor", value)} />
           <Field label="분석일" type="date" value={student.analysisDate} onChange={(value) => updateStudent("analysisDate", value)} />
           <label className="block">
@@ -193,17 +216,21 @@ export default function Page() {
         </section>
       </header>
 
-      <div className="space-y-5">
-        <Dashboard records={records} gradeScale={gradeScale} />
-        <div className="print:hidden">
-          <GradeInputTable records={records} gradeScale={gradeScale} onChange={updateRecords} />
+      {reportMode === "grades" ? (
+        <div className="space-y-5">
+          <Dashboard records={records} gradeScale={gradeScale} />
+          <div className="print:hidden">
+            <GradeInputTable records={records} gradeScale={gradeScale} onChange={updateRecords} />
+          </div>
+          <SubjectAnalysis records={records} gradeScale={gradeScale} />
+          <CourseAnalysis records={records} gradeScale={gradeScale} />
+          <GroupAnalysis records={records} gradeScale={gradeScale} />
+          <TrendAnalysis records={records} gradeScale={gradeScale} />
+          <Diagnosis records={records} student={student} gradeScale={gradeScale} />
         </div>
-        <SubjectAnalysis records={records} gradeScale={gradeScale} />
-        <CourseAnalysis records={records} gradeScale={gradeScale} />
-        <GroupAnalysis records={records} gradeScale={gradeScale} />
-        <TrendAnalysis records={records} gradeScale={gradeScale} />
-        <Diagnosis records={records} student={student} gradeScale={gradeScale} />
-      </div>
+      ) : (
+        <MockExamReport records={mockRecords} student={student} onChange={updateMockRecords} />
+      )}
     </main>
   );
 }
@@ -212,11 +239,12 @@ function createId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
-function createProfile(student: StudentInfo, records: GradeRecord[], gradeScale: GradeScale): StudentProfile {
+function createProfile(student: StudentInfo, records: GradeRecord[], mockRecords: MockExamRecord[], gradeScale: GradeScale): StudentProfile {
   return {
     id: createId("student"),
     student: normalizeStudent(student),
     records: records.map((record) => ({ ...record })),
+    mockRecords: mockRecords.map((record) => ({ ...record })),
     gradeScale: gradeScale === 5 ? 5 : 9
   };
 }
@@ -226,6 +254,7 @@ function normalizeProfile(profile: StudentProfile): StudentProfile {
     id: profile.id || createId("student"),
     student: normalizeStudent(profile.student),
     records: Array.isArray(profile.records) ? profile.records : [],
+    mockRecords: Array.isArray(profile.mockRecords) ? profile.mockRecords : [],
     gradeScale: profile.gradeScale === 5 ? 5 : 9
   };
 }
@@ -233,11 +262,14 @@ function normalizeProfile(profile: StudentProfile): StudentProfile {
 function normalizeStudent(saved: Partial<StudentInfo>): StudentInfo {
   const merged = { ...sampleStudent, ...saved };
   const invalidGender = !GENDER_OPTIONS.includes(merged.gender);
+  const schoolType = merged.schoolType === "자율고" ? "자사고" : merged.schoolType;
+  const invalidSchoolType = !SCHOOL_TYPE_OPTIONS.includes(schoolType);
   const invalidRegion = /학교|학년/.test(merged.region);
 
   return {
     ...merged,
     gender: invalidGender ? sampleStudent.gender : merged.gender,
+    schoolType: invalidSchoolType ? sampleStudent.schoolType : schoolType,
     region: invalidRegion ? sampleStudent.region : merged.region
   };
 }

@@ -74,15 +74,15 @@ export default function SubjectAnalysis({ records, gradeScale }: { records: Grad
 
           <div className="space-y-4">
             <article className="rounded-lg border border-line p-4">
-              <h3 className="mb-3 font-extrabold">과목별 평균등급 가로 막대그래프</h3>
+              <h3 className="mb-3 font-extrabold">과목별 평균등급 세로 막대그래프</h3>
               <ResponsiveContainer width="100%" height={360}>
-                <BarChart data={subjectChartData} layout="vertical" margin={{ left: 26, right: 72 }}>
+                <BarChart data={subjectChartData} margin={{ top: 24, right: 18, left: 0, bottom: 24 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis type="number" domain={[1, gradeScale]} tickFormatter={(value) => `${gradeScale + 1 - Number(value)}등급`} />
-                  <YAxis dataKey="key" type="category" width={86} />
+                  <XAxis dataKey="key" interval={0} angle={-18} textAnchor="end" height={62} />
+                  <YAxis domain={[1, gradeScale]} allowDecimals={false} tickFormatter={(value) => `${gradeScale + 1 - Number(value)}등급`} />
                   <Tooltip formatter={(_, __, item) => formatGrade(item.payload.average)} />
-                  <Bar dataKey="score" fill="#0f766e" radius={[0, 6, 6, 0]}>
-                    <LabelList dataKey="average" position="right" formatter={(value: number) => formatScore(value)} className="fill-slate-700 text-xs font-bold" />
+                  <Bar dataKey="score" fill="#0f766e" radius={[6, 6, 0, 0]}>
+                    <LabelList dataKey="score" position="top" formatter={(value: number) => formatScore(value)} className="fill-slate-700 text-xs font-bold" />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>

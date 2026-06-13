@@ -1,13 +1,16 @@
 export type CoreCourse = "국어" | "수학" | "영어" | "사회" | "과학" | "기타";
 export type GradeScale = 5 | 9;
+export type ReportMode = "grades" | "mock";
 
 export type StudentInfo = {
   name: string;
   gender: string;
   region: string;
+  schoolType: string;
   school: string;
   grade: string;
   track: string;
+  targetUniversity: string;
   targetMajor: string;
   analysisDate: string;
 };
@@ -27,10 +30,34 @@ export type GradeRecord = {
   students: number | "";
 };
 
+export type MockExamSubject =
+  | "국어"
+  | "수학"
+  | "영어"
+  | "한국사"
+  | "탐구1"
+  | "탐구2"
+  | "제2외국어/한문";
+
+export type MockExamRecord = {
+  id: string;
+  examName: string;
+  examType: "모의고사" | "수능";
+  year: string;
+  month: string;
+  subject: MockExamSubject;
+  selectedCourse: string;
+  rawScore: number | "";
+  standardScore: number | "";
+  percentile: number | "";
+  grade: number | "";
+};
+
 export type StudentProfile = {
   id: string;
   student: StudentInfo;
   records: GradeRecord[];
+  mockRecords: MockExamRecord[];
   gradeScale: GradeScale;
 };
 

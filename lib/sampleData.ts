@@ -1,12 +1,14 @@
-import type { GradeRecord, StudentInfo } from "@/types/grade";
+import type { GradeRecord, MockExamRecord, StudentInfo } from "@/types/grade";
 
 export const sampleStudent: StudentInfo = {
   name: "김하늘",
   gender: "여성",
   region: "서울",
+  schoolType: "일반고",
   school: "한빛고등학교",
   grade: "2학년",
   track: "인문",
+  targetUniversity: "서울 주요 대학",
   targetMajor: "사회학과",
   analysisDate: new Date().toISOString().slice(0, 10)
 };
@@ -32,4 +34,18 @@ export const sampleGrades: GradeRecord[] = [
   { id: "s18", course: "영어", subject: "영어 II", year: "2", semester: "2", credits: 4, rawScore: 95, subjectAverage: 75.0, standardDeviation: 14.0, rankGrade: 1, achievement: "A", students: 209 },
   { id: "s19", course: "사회", subject: "생활과 윤리", year: "2", semester: "2", credits: 3, rawScore: 98, subjectAverage: 76.4, standardDeviation: 12.8, rankGrade: 1, achievement: "A", students: 155 },
   { id: "s20", course: "과학", subject: "생명과학 I", year: "2", semester: "2", credits: 3, rawScore: 84, subjectAverage: 70.6, standardDeviation: 16.8, rankGrade: 3, achievement: "B", students: 144 }
+];
+
+export const sampleMockExams: MockExamRecord[] = [
+  { id: "m1", examName: "2025년 3월 전국연합", examType: "모의고사", year: "2025", month: "3", subject: "국어", selectedCourse: "언어와 매체", rawScore: 86, standardScore: 128, percentile: 92, grade: 2 },
+  { id: "m2", examName: "2025년 3월 전국연합", examType: "모의고사", year: "2025", month: "3", subject: "수학", selectedCourse: "확률과 통계", rawScore: 78, standardScore: 121, percentile: 84, grade: 3 },
+  { id: "m3", examName: "2025년 3월 전국연합", examType: "모의고사", year: "2025", month: "3", subject: "영어", selectedCourse: "영어", rawScore: 91, standardScore: "", percentile: "", grade: 2 },
+  { id: "m4", examName: "2025년 3월 전국연합", examType: "모의고사", year: "2025", month: "3", subject: "한국사", selectedCourse: "한국사", rawScore: 44, standardScore: "", percentile: "", grade: 1 },
+  { id: "m5", examName: "2025년 3월 전국연합", examType: "모의고사", year: "2025", month: "3", subject: "탐구1", selectedCourse: "사회문화", rawScore: 42, standardScore: 66, percentile: 94, grade: 2 },
+  { id: "m6", examName: "2025년 3월 전국연합", examType: "모의고사", year: "2025", month: "3", subject: "탐구2", selectedCourse: "생활과 윤리", rawScore: 45, standardScore: 68, percentile: 96, grade: 1 },
+  { id: "m7", examName: "2025년 6월 모의평가", examType: "모의고사", year: "2025", month: "6", subject: "국어", selectedCourse: "언어와 매체", rawScore: 90, standardScore: 132, percentile: 95, grade: 2 },
+  { id: "m8", examName: "2025년 6월 모의평가", examType: "모의고사", year: "2025", month: "6", subject: "수학", selectedCourse: "확률과 통계", rawScore: 82, standardScore: 126, percentile: 89, grade: 2 },
+  { id: "m9", examName: "2025년 6월 모의평가", examType: "모의고사", year: "2025", month: "6", subject: "영어", selectedCourse: "영어", rawScore: 94, standardScore: "", percentile: "", grade: 1 },
+  { id: "m10", examName: "2025년 6월 모의평가", examType: "모의고사", year: "2025", month: "6", subject: "탐구1", selectedCourse: "사회문화", rawScore: 44, standardScore: 67, percentile: 95, grade: 2 },
+  { id: "m11", examName: "2025년 6월 모의평가", examType: "모의고사", year: "2025", month: "6", subject: "탐구2", selectedCourse: "생활과 윤리", rawScore: 47, standardScore: 70, percentile: 98, grade: 1 }
 ];
