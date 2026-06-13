@@ -434,6 +434,119 @@ li + li {
   min-width: 0;
 }
 
+.average-chart {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.average-chart-row {
+  display: grid;
+  grid-template-columns: minmax(72px, 0.8fr) minmax(110px, 1.4fr) minmax(72px, 0.7fr);
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.average-chart-row strong {
+  min-width: 0;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.average-bars {
+  display: grid;
+  gap: 3px;
+}
+
+.average-bars span {
+  display: block;
+  height: 7px;
+  border-radius: 999px;
+}
+
+.weighted-bar {
+  background: var(--accent);
+}
+
+.simple-bar {
+  background: var(--blue);
+}
+
+.average-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.average-card {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.average-card-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.average-card-title strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.average-card-title span {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-weight: 900;
+}
+
+.average-card dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.average-card dl div {
+  min-width: 0;
+  padding: 8px;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.average-card dt {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.average-card dd {
+  margin: 4px 0 0;
+  color: var(--ink);
+  font-weight: 900;
+}
+
+.average-empty {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  text-align: center;
+}
+
 .trend-matrix-grid article {
   min-width: 0;
 }
@@ -483,22 +596,14 @@ li + li {
   min-width: 640px;
 }
 
-.average-table {
-  min-width: 620px;
-}
-
 .trend-matrix th,
-.trend-matrix td,
-.average-table th,
-.average-table td {
+.trend-matrix td {
   padding: 9px 10px;
   text-align: center;
 }
 
 .trend-matrix th:first-child,
-.trend-matrix td:first-child,
-.average-table th:first-child,
-.average-table td:first-child {
+.trend-matrix td:first-child {
   position: sticky;
   left: 0;
   z-index: 2;
@@ -511,20 +616,9 @@ li + li {
   overflow-wrap: anywhere;
 }
 
-.trend-matrix thead th:first-child,
-.average-table thead th:first-child {
+.trend-matrix thead th:first-child {
   z-index: 4;
   background: #f8fafc;
-}
-
-.average-table td:nth-child(2) {
-  color: var(--accent-strong);
-  font-weight: 800;
-}
-
-.average-table td:nth-child(3) {
-  color: var(--blue);
-  font-weight: 800;
 }
 
 .total-average,
@@ -619,23 +713,24 @@ li + li {
     min-width: 600px;
   }
 
-  .average-table {
-    min-width: 560px;
-  }
-
   .trend-matrix th,
-  .trend-matrix td,
-  .average-table th,
-  .average-table td {
+  .trend-matrix td {
     padding: 8px 8px;
   }
 
   .trend-matrix th:first-child,
-  .trend-matrix td:first-child,
-  .average-table th:first-child,
-  .average-table td:first-child {
+  .trend-matrix td:first-child {
     width: 104px;
     min-width: 104px;
     max-width: 104px;
+  }
+
+  .average-list,
+  .average-card dl {
+    grid-template-columns: 1fr;
+  }
+
+  .average-chart-row {
+    grid-template-columns: 1fr;
   }
 }

@@ -42,14 +42,14 @@ const selectors = {
   groupList: document.querySelector("#subjectGroupList"),
   insightList: document.querySelector("#insightList"),
   targetResult: document.querySelector("#targetResult"),
-  categoryAverageHead: document.querySelector("#categoryAverageHead"),
   categoryAverageBody: document.querySelector("#categoryAverageBody"),
-  subjectAverageHead: document.querySelector("#subjectAverageHead"),
   subjectAverageBody: document.querySelector("#subjectAverageBody"),
-  semesterAverageHead: document.querySelector("#semesterAverageHead"),
   semesterAverageBody: document.querySelector("#semesterAverageBody"),
-  yearAverageHead: document.querySelector("#yearAverageHead"),
   yearAverageBody: document.querySelector("#yearAverageBody"),
+  categoryAverageChart: document.querySelector("#categoryAverageChart"),
+  subjectAverageChart: document.querySelector("#subjectAverageChart"),
+  semesterAverageChart: document.querySelector("#semesterAverageChart"),
+  yearAverageChart: document.querySelector("#yearAverageChart"),
   detailTrendSummary: document.querySelector("#detailTrendSummary"),
   categoryTrendHead: document.querySelector("#categoryTrendHead"),
   categoryTrendBody: document.querySelector("#categoryTrendBody"),
@@ -200,46 +200,67 @@ function updateGroups(rows) {
   });
 }
 
-function renderAverageTable(rows, keyFactory, head, body, label, preferredOrder = []) {
-  head.innerHTML = `
-    <tr>
-      <th>${label}</th>
-      <th>\ub2e8\uc704\uc218 \uc801\uc6a9</th>
-      <th>\ub2e8\uc704\uc218 \ubbf8\uc801\uc6a9</th>
-      <th>\ucc28\uc774</th>
-      <th>\ub2e8\uc704</th>
-      <th>\uac74\uc218</th>
-    </tr>
-  `;
-  body.innerHTML = "";
-
+function averageStats(rows, keyFactory, preferredOrder = []) {
   const orderMap = new Map(preferredOrder.map((item, index) => [item, index]));
-  const stats = byAverageComparison(rows, keyFactory)
+  return byAverageComparison(rows, keyFactory)
     .sort((a, b) => {
       const aOrder = orderMap.has(a.key) ? orderMap.get(a.key) : Number.MAX_SAFE_INTEGER;
       const bOrder = orderMap.has(b.key) ? orderMap.get(b.key) : Number.MAX_SAFE_INTEGER;
       return aOrder - bOrder || a.key.localeCompare(b.key);
     });
+}
+
+function renderAverageChart(stats, chart) {
+  chart.innerHTML = "";
+  if (!stats.length) {
+    chart.textContent = "\ud45c\uc2dc\ud560 \ub370\uc774\ud130\uac00 \uc5c6\uc2b5\ub2c8\ub2e4.";
+    return;
+  }
+
+  stats.slice(0, 8).forEach((stat) => {
+    const weightedWidth = `${Math.max(8, (10 - stat.weightedAverage) * 10)}%`;
+    const simpleWidth = `${Math.max(8, (10 - stat.simpleAverage) * 10)}%`;
+    const item = document.createElement("div");
+    item.className = "average-chart-row";
+    item.innerHTML = `
+      <strong>${stat.key}</strong>
+      <div class="average-bars">
+        <span class="weighted-bar" style="width: ${weightedWidth}"></span>
+        <span class="simple-bar" style="width: ${simpleWidth}"></span>
+      </div>
+      <span>${stat.weightedAverage.toFixed(2)} / ${stat.simpleAverage.toFixed(2)}</span>
+    `;
+    chart.append(item);
+  });
+}
+
+function renderAverageCards(rows, keyFactory, body, chart, preferredOrder = []) {
+  body.innerHTML = "";
+  const stats = averageStats(rows, keyFactory, preferredOrder);
+  renderAverageChart(stats, chart);
 
   if (!stats.length) {
-    const row = document.createElement("tr");
-    row.innerHTML = `<td colspan="6" class="empty-cell">\ud45c\uc2dc\ud560 \ud3c9\uade0 \ub370\uc774\ud130\uac00 \uc5c6\uc2b5\ub2c8\ub2e4.</td>`;
-    body.append(row);
+    body.innerHTML = `<div class="average-empty">\ud45c\uc2dc\ud560 \ud3c9\uade0 \ub370\uc774\ud130\uac00 \uc5c6\uc2b5\ub2c8\ub2e4.</div>`;
     return;
   }
 
   stats.forEach((stat) => {
     const diff = stat.weightedAverage - stat.simpleAverage;
-    const row = document.createElement("tr");
-    row.innerHTML = `
-      <th>${stat.key}</th>
-      <td>${stat.weightedAverage.toFixed(2)}</td>
-      <td>${stat.simpleAverage.toFixed(2)}</td>
-      <td class="${Math.abs(diff) >= 0.1 ? "diff-strong" : ""}">${diff >= 0 ? "+" : ""}${diff.toFixed(2)}</td>
-      <td>${stat.credits}</td>
-      <td>${stat.count}</td>
+    const card = document.createElement("article");
+    card.className = "average-card";
+    card.innerHTML = `
+      <div class="average-card-title">
+        <strong>${stat.key}</strong>
+        <span class="${Math.abs(diff) >= 0.1 ? "diff-strong" : ""}">${diff >= 0 ? "+" : ""}${diff.toFixed(2)}</span>
+      </div>
+      <dl>
+        <div><dt>\ub2e8\uc704\uc218 \uc801\uc6a9</dt><dd>${stat.weightedAverage.toFixed(2)}</dd></div>
+        <div><dt>\ub2e8\uc704\uc218 \ubbf8\uc801\uc6a9</dt><dd>${stat.simpleAverage.toFixed(2)}</dd></div>
+        <div><dt>\ub2e8\uc704</dt><dd>${stat.credits}</dd></div>
+        <div><dt>\uac74\uc218</dt><dd>${stat.count}</dd></div>
+      </dl>
     `;
-    body.append(row);
+    body.append(card);
   });
 }
 
@@ -247,34 +268,30 @@ function updateAverageSummary(rows) {
   const semesters = ["1-1", "1-2", "2-1", "2-2", "3-1", "3-2"];
   const years = ["1", "2", "3"];
 
-  renderAverageTable(
+  renderAverageCards(
     rows,
     (row) => row.category,
-    selectors.categoryAverageHead,
     selectors.categoryAverageBody,
-    "\uad50\uacfc\uad70"
+    selectors.categoryAverageChart
   );
-  renderAverageTable(
+  renderAverageCards(
     rows,
     (row) => row.subject,
-    selectors.subjectAverageHead,
     selectors.subjectAverageBody,
-    "\uacfc\ubaa9"
+    selectors.subjectAverageChart
   );
-  renderAverageTable(
+  renderAverageCards(
     rows,
     (row) => `${row.year}-${row.semester}`,
-    selectors.semesterAverageHead,
     selectors.semesterAverageBody,
-    "\ud559\uae30",
+    selectors.semesterAverageChart,
     semesters
   );
-  renderAverageTable(
+  renderAverageCards(
     rows,
     (row) => row.year,
-    selectors.yearAverageHead,
     selectors.yearAverageBody,
-    "\ud559\ub144",
+    selectors.yearAverageChart,
     years
   );
 }
