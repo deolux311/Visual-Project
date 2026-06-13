@@ -218,17 +218,17 @@ function renderAverageChart(stats, chart) {
   }
 
   stats.slice(0, 8).forEach((stat) => {
-    const weightedWidth = `${Math.max(8, (10 - stat.weightedAverage) * 10)}%`;
-    const simpleWidth = `${Math.max(8, (10 - stat.simpleAverage) * 10)}%`;
+    const weightedHeight = `${Math.max(8, (10 - stat.weightedAverage) * 10)}%`;
+    const simpleHeight = `${Math.max(8, (10 - stat.simpleAverage) * 10)}%`;
     const item = document.createElement("div");
     item.className = "average-chart-row";
     item.innerHTML = `
-      <strong>${stat.key}</strong>
       <div class="average-bars">
-        <span class="weighted-bar" style="width: ${weightedWidth}"></span>
-        <span class="simple-bar" style="width: ${simpleWidth}"></span>
+        <span class="weighted-bar" style="height: ${weightedHeight}" title="\ub2e8\uc704\uc218 \uc801\uc6a9 ${stat.weightedAverage.toFixed(2)}"></span>
+        <span class="simple-bar" style="height: ${simpleHeight}" title="\ub2e8\uc704\uc218 \ubbf8\uc801\uc6a9 ${stat.simpleAverage.toFixed(2)}"></span>
       </div>
       <span>${stat.weightedAverage.toFixed(2)} / ${stat.simpleAverage.toFixed(2)}</span>
+      <strong>${stat.key}</strong>
     `;
     chart.append(item);
   });
