@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import AverageReportSections from "@/components/AverageReportSections";
 import CourseAnalysis from "@/components/CourseAnalysis";
 import Dashboard from "@/components/Dashboard";
 import Diagnosis from "@/components/Diagnosis";
@@ -23,6 +24,8 @@ export default function Page() {
   const [profiles, setProfiles] = useState<StudentProfile[]>(() => [createProfile(sampleStudent, sampleGrades, sampleMockExams, 9)]);
   const [activeId, setActiveId] = useState<string>("");
   const [reportMode, setReportMode] = useState<ReportMode>("grades");
+  const [gradePage, setGradePage] = useState<"report" | "input">("report");
+  const [workspacePage, setWorkspacePage] = useState<"report" | "students">("report");
 
   useEffect(() => {
     const saved = [STORAGE_KEY, ...LEGACY_KEYS].map((key) => localStorage.getItem(key)).find(Boolean);
@@ -66,8 +69,11 @@ export default function Page() {
 
   const reportTitle = useMemo(() => {
     const name = student.name || "학생";
-    return reportMode === "grades" ? `${name} 내신 성적 분석 리포트` : `${name} 모의고사/수능 성적 분석 리포트`;
-  }, [student.name, reportMode]);
+    if (workspacePage === "students") return "학생 목록";
+    if (reportMode === "mock") return `${name} 모의고사/수능 성적 분석 리포트`;
+    if (gradePage === "input") return `${name} 내신 성적 데이터 입력`;
+    return `${name} 내신 성적 분석 리포트`;
+  }, [student.name, reportMode, gradePage, workspacePage]);
 
   function updateActiveProfile(updater: (profile: StudentProfile) => StudentProfile) {
     setProfiles((current) => current.map((profile) => (profile.id === activeProfile.id ? updater(profile) : profile)));
@@ -97,6 +103,7 @@ export default function Page() {
       mockRecords: sampleMockExams.map((record) => ({ ...record })),
       gradeScale: 9
     }));
+    setGradePage("report");
   }
 
   function addStudent() {
@@ -112,6 +119,7 @@ export default function Page() {
     );
     setProfiles((current) => [...current, newProfile]);
     setActiveId(newProfile.id);
+    setGradePage("input");
   }
 
   function duplicateStudent() {
@@ -130,48 +138,58 @@ export default function Page() {
     const nextProfiles = profiles.filter((profile) => profile.id !== activeProfile.id);
     setProfiles(nextProfiles);
     setActiveId(nextProfiles[0].id);
+    setGradePage("report");
   }
+
+  function selectReportMode(nextMode: ReportMode) {
+    setWorkspacePage("report");
+    setReportMode(nextMode);
+    if (nextMode === "grades") setGradePage("report");
+  }
+
+  function openStudentReport(id = activeProfile.id) {
+    setActiveId(id);
+    setWorkspacePage("report");
+    setReportMode("grades");
+    setGradePage("report");
+  }
+
+  const isGradeInputPage = reportMode === "grades" && gradePage === "input";
+  const isStudentListPage = workspacePage === "students";
 
   return (
     <main className="report-root mx-auto max-w-[1500px] px-5 py-6">
-      <section className="mb-5 grid grid-cols-1 gap-4 print:hidden xl:grid-cols-[320px_1fr]">
-        <aside className="report-card p-4">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <div>
-              <p className="eyebrow">Students</p>
-              <h2 className="section-title">학생 목록</h2>
+      <section className="mb-5 report-card p-5 print:hidden">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="eyebrow">Selected Student</p>
+            <h2 className="mt-1 text-2xl font-black text-ink">{student.name || "학생"} 리포트 작업 중</h2>
+            <p className="mt-2 text-sm font-medium text-muted">
+              학생 목록을 별도 페이지에서 관리하고, 선택된 학생의 내신과 모의고사/수능 리포트를 입력·분석합니다.
+            </p>
+          </div>
+          <div className="rounded-md border border-line bg-slate-50 px-3 py-2 text-right text-xs font-extrabold text-muted">
+            전체 {profiles.length}명 · 현재 {student.school || "학교 미입력"}
+          </div>
+        </div>
+        <div className="mt-5 flex flex-wrap items-center gap-3">
+          <div className="inline-flex flex-wrap rounded-lg border border-line bg-slate-50 p-1">
+            <button className={`rounded-md px-4 py-2 text-sm font-extrabold ${!isStudentListPage && reportMode === "grades" ? "bg-white text-teal-750 shadow-sm" : "text-muted"}`} type="button" onClick={() => selectReportMode("grades")}>내신 리포트</button>
+            <button className={`rounded-md px-4 py-2 text-sm font-extrabold ${!isStudentListPage && reportMode === "mock" ? "bg-white text-teal-750 shadow-sm" : "text-muted"}`} type="button" onClick={() => selectReportMode("mock")}>모의고사/수능 리포트</button>
+          </div>
+          {reportMode === "grades" && !isStudentListPage ? (
+            <div className="inline-flex flex-wrap rounded-lg border border-line bg-slate-50 p-1">
+              <button className={`rounded-md px-4 py-2 text-sm font-extrabold ${gradePage === "report" ? "bg-white text-teal-750 shadow-sm" : "text-muted"}`} type="button" onClick={() => setGradePage("report")}>분석 리포트</button>
+              <button className={`rounded-md px-4 py-2 text-sm font-extrabold ${gradePage === "input" ? "bg-white text-teal-750 shadow-sm" : "text-muted"}`} type="button" onClick={() => setGradePage("input")}>내신 성적 입력</button>
             </div>
-            <button className="btn-primary" type="button" onClick={addStudent}>학생 추가</button>
-          </div>
-          <div className="grid max-h-[420px] gap-2 overflow-auto pr-1">
-            {profiles.map((profile) => (
-              <button
-                className={`rounded-md border px-3 py-3 text-left transition ${profile.id === activeProfile.id ? "border-teal-650 bg-teal-650/10" : "border-line bg-white hover:bg-slate-50"}`}
-                key={profile.id}
-                type="button"
-                onClick={() => setActiveId(profile.id)}
-              >
-                <strong className="block text-sm text-ink">{profile.student.name || "이름 없음"}</strong>
-                <span className="mt-1 block text-xs font-bold text-muted">
-                  {profile.student.school || "학교 미입력"} · {formatGrade(weightedAverage(profile.records, profile.gradeScale))} · {totalCredits(profile.records, profile.gradeScale)}단위
-                </span>
-              </button>
-            ))}
-          </div>
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <button className="btn-secondary" type="button" onClick={duplicateStudent}>복사</button>
-            <button className="btn-secondary" type="button" onClick={deleteActiveStudent} disabled={profiles.length <= 1}>삭제</button>
-          </div>
-        </aside>
-
-        <div className="report-card p-5">
-          <p className="eyebrow">Selected Student</p>
-          <h2 className="mt-1 text-2xl font-black text-ink">{student.name || "학생"} 리포트 작업 중</h2>
-          <p className="mt-2 text-sm font-medium text-muted">학생 목록에서 대상을 선택한 뒤 내신과 모의고사/수능 리포트를 각각 입력하고 분석할 수 있습니다.</p>
-          <div className="mt-5 inline-flex rounded-lg border border-line bg-slate-50 p-1">
-            <button className={`rounded-md px-4 py-2 text-sm font-extrabold ${reportMode === "grades" ? "bg-white text-teal-750 shadow-sm" : "text-muted"}`} type="button" onClick={() => setReportMode("grades")}>내신 리포트</button>
-            <button className={`rounded-md px-4 py-2 text-sm font-extrabold ${reportMode === "mock" ? "bg-white text-teal-750 shadow-sm" : "text-muted"}`} type="button" onClick={() => setReportMode("mock")}>모의고사/수능 리포트</button>
-          </div>
+          ) : null}
+          <button
+            className={`ml-auto rounded-md px-4 py-2 text-sm font-extrabold ${isStudentListPage ? "bg-teal-650 text-white shadow-sm" : "border border-line bg-white text-teal-750"}`}
+            type="button"
+            onClick={() => setWorkspacePage("students")}
+          >
+            학생 목록
+          </button>
         </div>
       </section>
 
@@ -180,21 +198,33 @@ export default function Page() {
           <div className="flex min-w-0 flex-1 flex-wrap items-start gap-5">
             <img className="h-14 w-auto object-contain print:h-12" src={`${BASE_PATH}/deolux-logo.png`} alt="DEOLUX 데오럭스 교육그룹" />
             <div className="min-w-0">
-              <p className="eyebrow">{reportMode === "grades" ? "School Record Grade Lab" : "Mock Exam Score Lab"}</p>
+              <p className="eyebrow">{isStudentListPage ? "Students" : reportMode === "mock" ? "Mock Exam Score Lab" : isGradeInputPage ? "Grade Input Lab" : "School Record Grade Lab"}</p>
               <h1 className="mt-1 text-3xl font-black tracking-normal text-ink">{reportTitle}</h1>
               <p className="mt-2 text-sm font-medium text-muted">
-                {reportMode === "grades"
-                  ? "교과 성적을 입력하면 과목별 → 교과별 → 교과군별 → 성장추이 → 종합진단 순서로 자동 분석합니다."
-                  : "모의고사/수능 성적을 입력하면 영역별 → 시험별 추이 → 백분위/등급 → 종합진단 순서로 자동 분석합니다."}
+                {isStudentListPage
+                  ? "여러 학생을 한 곳에서 추가·선택·복사·삭제하고, 선택한 학생의 리포트 페이지로 이동합니다."
+                  : reportMode === "mock"
+                  ? "모의고사/수능 성적을 입력하면 영역별 → 시험별 추이 → 백분위/등급 → 종합진단 순서로 자동 분석합니다."
+                  : isGradeInputPage
+                    ? "내신 성적 데이터를 표 형태로 입력하고 저장합니다. 입력 후 분석 리포트 화면에서 자동 계산 결과를 확인할 수 있습니다."
+                    : "교과 성적을 입력하면 과목별 → 교과별 → 교과군별 → 성장추이 → 종합진단 순서로 자동 분석합니다."}
               </p>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2 print:hidden">
-            <button className="btn-secondary" type="button" onClick={() => window.print()}>PDF 다운로드</button>
-            <button className="btn-secondary" type="button" onClick={resetActiveToSample}>샘플로 초기화</button>
-          </div>
+          {!isStudentListPage ? (
+            <div className="flex flex-wrap gap-2 print:hidden">
+              {isGradeInputPage ? (
+                <button className="btn-primary" type="button" onClick={() => document.getElementById("grade-image-pdf-upload")?.click()}>
+                  이미지/PDF 업로드
+                </button>
+              ) : null}
+              <button className="btn-secondary" type="button" onClick={() => window.print()}>PDF 다운로드</button>
+              <button className="btn-secondary" type="button" onClick={resetActiveToSample}>샘플로 초기화</button>
+            </div>
+          ) : null}
         </div>
 
+        {!isStudentListPage ? (
         <section className="mt-6 grid grid-cols-2 gap-3 xl:grid-cols-11">
           <Field label="이름" value={student.name} onChange={(value) => updateStudent("name", value)} />
           <Field label="성별" value={student.gender} options={GENDER_OPTIONS} onChange={(value) => updateStudent("gender", value)} />
@@ -214,24 +244,152 @@ export default function Page() {
             </select>
           </label>
         </section>
+        ) : null}
       </header>
 
-      {reportMode === "grades" ? (
+      {isStudentListPage ? (
+        <StudentListPage
+          profiles={profiles}
+          activeId={activeProfile.id}
+          onAdd={addStudent}
+          onSelect={setActiveId}
+          onOpenReport={openStudentReport}
+          onDuplicate={duplicateStudent}
+          onDelete={deleteActiveStudent}
+        />
+      ) : isGradeInputPage ? (
+        <div className="space-y-5">
+          <section className="report-card p-5 print:hidden">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="eyebrow">Grade Input</p>
+                <h2 className="section-title">내신 성적 데이터 입력</h2>
+                <p className="mt-2 text-sm font-bold text-muted">입력한 성적은 현재 선택된 학생에게 자동 저장됩니다.</p>
+              </div>
+              <button className="btn-secondary" type="button" onClick={() => setGradePage("report")}>분석 리포트 보기</button>
+            </div>
+          </section>
+          <GradeInputTable records={records} gradeScale={gradeScale} onChange={updateRecords} />
+        </div>
+      ) : reportMode === "grades" ? (
         <div className="space-y-5">
           <Dashboard records={records} gradeScale={gradeScale} />
-          <div className="print:hidden">
-            <GradeInputTable records={records} gradeScale={gradeScale} onChange={updateRecords} />
-          </div>
-          <SubjectAnalysis records={records} gradeScale={gradeScale} />
-          <CourseAnalysis records={records} gradeScale={gradeScale} />
-          <GroupAnalysis records={records} gradeScale={gradeScale} />
-          <TrendAnalysis records={records} gradeScale={gradeScale} />
+          <section className="report-card p-5 print:hidden">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="eyebrow">Grade Records</p>
+                <h2 className="section-title">내신 성적 입력은 별도 페이지에서 관리합니다</h2>
+                <p className="mt-2 text-sm font-bold text-muted">성적을 수정하거나 추가하려면 입력 페이지로 이동하세요.</p>
+              </div>
+              <button className="btn-primary" type="button" onClick={() => setGradePage("input")}>내신 성적 입력 페이지 열기</button>
+            </div>
+          </section>
+          <AverageReportSections records={records} gradeScale={gradeScale} />
           <Diagnosis records={records} student={student} gradeScale={gradeScale} />
         </div>
       ) : (
         <MockExamReport records={mockRecords} student={student} onChange={updateMockRecords} />
       )}
     </main>
+  );
+}
+
+function StudentListPage({
+  profiles,
+  activeId,
+  onAdd,
+  onSelect,
+  onOpenReport,
+  onDuplicate,
+  onDelete
+}: {
+  profiles: StudentProfile[];
+  activeId: string;
+  onAdd: () => void;
+  onSelect: (id: string) => void;
+  onOpenReport: (id: string) => void;
+  onDuplicate: () => void;
+  onDelete: () => void;
+}) {
+  const activeProfile = profiles.find((profile) => profile.id === activeId) ?? profiles[0];
+
+  return (
+    <section className="report-card p-5 print:hidden">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="eyebrow">Student Directory</p>
+          <h2 className="section-title">학생 목록</h2>
+          <p className="mt-2 text-sm font-bold text-muted">
+            학생을 선택한 뒤 리포트를 열면 해당 학생의 내신·모의고사 데이터가 따로 저장됩니다.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button className="btn-primary" type="button" onClick={onAdd}>학생 추가</button>
+          <button className="btn-secondary" type="button" onClick={onDuplicate}>선택 학생 복사</button>
+          <button className="btn-secondary" type="button" onClick={onDelete} disabled={profiles.length <= 1}>선택 학생 삭제</button>
+        </div>
+      </div>
+
+      <div className="mb-4 rounded-lg border border-teal-650 bg-teal-650/10 p-4">
+        <p className="text-xs font-extrabold uppercase text-teal-750">현재 선택 학생</p>
+        <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h3 className="text-xl font-black text-ink">{activeProfile.student.name || "이름 없음"}</h3>
+            <p className="mt-1 text-sm font-bold text-muted">
+              {activeProfile.student.region || "지역 미입력"} · {activeProfile.student.schoolType || "학교 종류 미입력"} · {activeProfile.student.school || "학교 미입력"}
+            </p>
+          </div>
+          <button className="btn-primary" type="button" onClick={() => onOpenReport(activeProfile.id)}>선택 학생 리포트 열기</button>
+        </div>
+      </div>
+
+      <div className="overflow-auto rounded-lg border border-line">
+        <table className="min-w-[980px] w-full border-collapse text-sm">
+          <thead className="bg-slate-50 text-left text-xs font-extrabold text-muted">
+            <tr>
+              <th className="px-3 py-3">상태</th>
+              <th className="px-3 py-3">이름</th>
+              <th className="px-3 py-3">성별</th>
+              <th className="px-3 py-3">지역</th>
+              <th className="px-3 py-3">학교</th>
+              <th className="px-3 py-3">학년</th>
+              <th className="px-3 py-3">계열</th>
+              <th className="px-3 py-3 text-center">전체 평균</th>
+              <th className="px-3 py-3 text-center">총 이수단위</th>
+              <th className="px-3 py-3 text-right">작업</th>
+            </tr>
+          </thead>
+          <tbody>
+            {profiles.map((profile) => {
+              const selected = profile.id === activeId;
+              return (
+                <tr className={`border-t border-line ${selected ? "bg-teal-650/10" : "bg-white"}`} key={profile.id}>
+                  <td className="px-3 py-3">
+                    <span className={`rounded-md px-2 py-1 text-xs font-extrabold ${selected ? "bg-teal-650 text-white" : "bg-slate-100 text-muted"}`}>
+                      {selected ? "선택됨" : "대기"}
+                    </span>
+                  </td>
+                  <td className="px-3 py-3 font-extrabold text-ink">{profile.student.name || "이름 없음"}</td>
+                  <td className="px-3 py-3">{profile.student.gender || "-"}</td>
+                  <td className="px-3 py-3">{profile.student.region || "-"}</td>
+                  <td className="px-3 py-3">{profile.student.school || "-"}</td>
+                  <td className="px-3 py-3">{profile.student.grade || "-"}</td>
+                  <td className="px-3 py-3">{profile.student.track || "-"}</td>
+                  <td className="px-3 py-3 text-center font-extrabold">{formatGrade(weightedAverage(profile.records, profile.gradeScale))}</td>
+                  <td className="px-3 py-3 text-center font-extrabold">{totalCredits(profile.records, profile.gradeScale)}단위</td>
+                  <td className="px-3 py-3">
+                    <div className="flex justify-end gap-2">
+                      <button className="btn-secondary" type="button" onClick={() => onSelect(profile.id)}>선택</button>
+                      <button className="btn-primary" type="button" onClick={() => onOpenReport(profile.id)}>리포트</button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }
 

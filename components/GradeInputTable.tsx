@@ -1,6 +1,7 @@
 "use client";
 
 import type { ChangeEvent } from "react";
+import ImageGradeExtractor from "@/components/ImageGradeExtractor";
 import { COURSE_ORDER } from "@/lib/calculations";
 import { sampleGrades } from "@/lib/sampleData";
 import type { GradeRecord, GradeScale } from "@/types/grade";
@@ -11,7 +12,7 @@ type Props = {
   onChange: (records: GradeRecord[]) => void;
 };
 
-const columns = ["교과", "과목", "학년", "학기", "단위수", "원점수", "과목평균", "표준편차", "석차등급", "성취도", "수강자수", ""];
+const columns = ["교과", "과목", "학년", "학기", "단위수", "원점수", "과목평균", "표준편차", "성취도", "수강자수", "석차등급", ""];
 
 export default function GradeInputTable({ records, gradeScale, onChange }: Props) {
   function update(id: string, field: keyof GradeRecord, value: string) {
@@ -51,6 +52,10 @@ export default function GradeInputTable({ records, gradeScale, onChange }: Props
     onChange(records.filter((record) => record.id !== id));
   }
 
+  function appendExtractedRows(nextRecords: GradeRecord[]) {
+    onChange([...records, ...nextRecords]);
+  }
+
   function uploadCsv(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -73,9 +78,9 @@ export default function GradeInputTable({ records, gradeScale, onChange }: Props
             rawScore: toNumber(row[5]),
             subjectAverage: toNumber(row[6]),
             standardDeviation: toNumber(row[7]),
-            rankGrade: toNumber(row[8]),
-            achievement: row[9],
-            students: toNumber(row[10])
+            achievement: row[8],
+            students: toNumber(row[9]),
+            rankGrade: toNumber(row[10])
           }))
       );
     });
@@ -94,9 +99,9 @@ export default function GradeInputTable({ records, gradeScale, onChange }: Props
         record.rawScore,
         record.subjectAverage,
         record.standardDeviation,
-        record.rankGrade,
         record.achievement,
-        record.students
+        record.students,
+        record.rankGrade
       ].join(",")
     );
     downloadBlob([header, ...lines].join("\n"), "student-grades.csv", "text/csv;charset=utf-8");
@@ -106,7 +111,7 @@ export default function GradeInputTable({ records, gradeScale, onChange }: Props
     const rows = records
       .map(
         (record) =>
-          `<tr><td>${record.course}</td><td>${record.subject}</td><td>${record.year}</td><td>${record.semester}</td><td>${record.credits}</td><td>${record.rawScore}</td><td>${record.subjectAverage}</td><td>${record.standardDeviation}</td><td>${record.rankGrade}</td><td>${record.achievement}</td><td>${record.students}</td></tr>`
+          `<tr><td>${record.course}</td><td>${record.subject}</td><td>${record.year}</td><td>${record.semester}</td><td>${record.credits}</td><td>${record.rawScore}</td><td>${record.subjectAverage}</td><td>${record.standardDeviation}</td><td>${record.achievement}</td><td>${record.students}</td><td>${record.rankGrade}</td></tr>`
       )
       .join("");
     const html = `<table><thead><tr>${columns.slice(0, -1).map((column) => `<th>${column}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>`;
@@ -132,6 +137,8 @@ export default function GradeInputTable({ records, gradeScale, onChange }: Props
         </div>
       </div>
 
+      <ImageGradeExtractor gradeScale={gradeScale} onApply={appendExtractedRows} />
+
       <div className="overflow-auto">
         <table className="min-w-[1320px] border-collapse text-sm">
           <thead className="bg-slate-50 text-left text-xs font-extrabold text-muted">
@@ -153,13 +160,14 @@ export default function GradeInputTable({ records, gradeScale, onChange }: Props
                   <td className="px-2 py-2"><input className="field" value={record.subject} onChange={(event) => update(record.id, "subject", event.target.value)} /></td>
                   <td className="px-2 py-2"><select className="field" value={record.year} onChange={(event) => update(record.id, "year", event.target.value)}><option>1</option><option>2</option><option>3</option></select></td>
                   <td className="px-2 py-2"><select className="field" value={record.semester} onChange={(event) => update(record.id, "semester", event.target.value)}><option>1</option><option>2</option></select></td>
-                  {(["credits", "rawScore", "subjectAverage", "standardDeviation", "rankGrade"] as (keyof GradeRecord)[]).map((field) => (
+                  {(["credits", "rawScore", "subjectAverage", "standardDeviation"] as (keyof GradeRecord)[]).map((field) => (
                     <td className="px-2 py-2" key={field}>
                       <input className="field" min={field === "rankGrade" ? 1 : 0} max={field === "rankGrade" ? gradeScale : 100} step="0.1" type="number" value={record[field]} onChange={(event) => update(record.id, field, event.target.value)} />
                     </td>
                   ))}
                   <td className="px-2 py-2"><input className="field" value={record.achievement} onChange={(event) => update(record.id, "achievement", event.target.value)} /></td>
                   <td className="px-2 py-2"><input className="field" min={0} type="number" value={record.students} onChange={(event) => update(record.id, "students", event.target.value)} /></td>
+                  <td className="px-2 py-2"><input className="field" min={1} max={gradeScale} step="0.1" type="number" value={record.rankGrade} onChange={(event) => update(record.id, "rankGrade", event.target.value)} /></td>
                   <td className="px-2 py-2"><button className="btn-danger" onClick={() => deleteRow(record.id)} type="button">×</button></td>
                 </tr>
               ))

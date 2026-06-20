@@ -82,7 +82,7 @@ export default function SubjectAnalysis({ records, gradeScale }: { records: Grad
                   <YAxis domain={[1, gradeScale]} allowDecimals={false} tickFormatter={(value) => `${gradeScale + 1 - Number(value)}등급`} />
                   <Tooltip formatter={(_, __, item) => formatGrade(item.payload.average)} />
                   <Bar dataKey="score" fill="#0f766e" radius={[6, 6, 0, 0]}>
-                    <LabelList dataKey="score" position="top" formatter={(value: number) => formatScore(value)} className="fill-slate-700 text-xs font-bold" />
+                    <LabelList dataKey="average" position="top" formatter={(value: number) => formatScore(value)} className="fill-slate-700 text-xs font-bold" />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
