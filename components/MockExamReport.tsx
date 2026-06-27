@@ -22,6 +22,9 @@ type Props = {
   records: MockExamRecord[];
   student: StudentInfo;
   onChange: (records: MockExamRecord[]) => void;
+  view?: "report" | "input";
+  diagnosisText?: string;
+  onDiagnosisChange?: (value: string) => void;
 };
 
 const MAX_EXAM_SESSIONS = 3;
@@ -34,7 +37,7 @@ const MATRIX_METRICS: { key: keyof MockExamRecord; label: string }[] = [
   { key: "grade", label: "등급" }
 ];
 
-export default function MockExamReport({ records, student, onChange }: Props) {
+export default function MockExamReport({ records, student, onChange, view = "report", diagnosisText = "", onDiagnosisChange }: Props) {
   const recentRecords = recentSessionRecords(records, 3);
   const stats = subjectStats(recentRecords);
   const trend = examTrend(records);
@@ -44,6 +47,7 @@ export default function MockExamReport({ records, student, onChange }: Props) {
   const trendStatus = mockTrendStatus(records);
   const latest = trend.at(-1);
   const sessionLimitReached = sessions.length >= MAX_EXAM_SESSIONS;
+  const generatedDiagnosis = generateMockDiagnosis(records, student.targetUniversity, student.targetMajor);
 
   function addSession() {
     if (sessionLimitReached) {
@@ -101,6 +105,8 @@ export default function MockExamReport({ records, student, onChange }: Props) {
 
   return (
     <div className="space-y-5">
+      {view === "input" ? null : (
+      <>
       <section className="grid grid-cols-2 gap-3 xl:grid-cols-5">
         <Kpi label="전체 평균등급" value={formatMockGrade(averageGrade(records))} />
         <Kpi label="최근 시험 평균" value={formatMockGrade(latest?.average)} />
@@ -136,7 +142,10 @@ export default function MockExamReport({ records, student, onChange }: Props) {
           </ResponsiveContainer>
         </ChartCard>
       </section>
+      </>
+      )}
 
+      {view === "input" ? (
       <section className="report-card overflow-hidden print:hidden">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line p-5">
           <div>
@@ -155,6 +164,20 @@ export default function MockExamReport({ records, student, onChange }: Props) {
         </div>
         <div className="overflow-auto">
           <MockExamMatrix sessions={sessions} onUpdateSession={updateSession} onUpdateRecord={updateMatrixRecord} onDeleteSession={deleteSession} />
+        </div>
+      </section>
+      ) : null}
+
+      {view === "report" ? (
+      <>
+      <section className="report-card overflow-hidden">
+        <div className="border-b border-line p-5">
+          <p className="eyebrow">Mock Exam Records</p>
+          <h2 className="section-title">모의고사/수능 성적 분석</h2>
+          <p className="mt-2 text-sm font-bold text-muted">입력 화면에 작성한 회차별 성적을 리포트에서도 함께 확인합니다.</p>
+        </div>
+        <div className="overflow-auto">
+          <MockExamReadOnlySummary sessions={sessions} />
         </div>
       </section>
 
@@ -184,14 +207,27 @@ export default function MockExamReport({ records, student, onChange }: Props) {
           </table>
         </div>
       </section>
+      </>
+      ) : null}
 
-      <section className="report-card p-5">
-        <p className="eyebrow">Diagnosis</p>
-        <h2 className="section-title">모의고사/수능 종합진단</h2>
-        <p className="mt-4 rounded-lg border border-line bg-slate-50 p-5 text-lg font-bold leading-8 text-ink">
-          {generateMockDiagnosis(records, student.targetUniversity, student.targetMajor)}
-        </p>
-      </section>
+      {view === "report" ? (
+        <section className="report-card p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="eyebrow">Diagnosis</p>
+              <h2 className="section-title">모의고사/수능 종합진단</h2>
+            </div>
+            <button className="btn-secondary print:hidden" type="button" onClick={() => onDiagnosisChange?.("")}>자동문구로 초기화</button>
+          </div>
+          <div className="mt-4 rounded-lg border border-line bg-slate-50 p-5">
+            <textarea
+              className="min-h-[260px] w-full resize-y rounded-md border border-transparent bg-transparent text-lg font-bold leading-8 text-ink outline-none focus:border-teal-650 focus:bg-white focus:p-3"
+              value={diagnosisText || generatedDiagnosis}
+              onChange={(event) => onDiagnosisChange?.(event.target.value)}
+            />
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }
@@ -200,12 +236,14 @@ function MockExamMatrix({
   sessions,
   onUpdateSession,
   onUpdateRecord,
-  onDeleteSession
+  onDeleteSession,
+  readOnly = false
 }: {
   sessions: { key: string; rows: MockExamRecord[] }[];
-  onUpdateSession: (sessionKey: string, field: "examName" | "examType" | "year" | "month", value: string) => void;
-  onUpdateRecord: (session: { key: string; rows: MockExamRecord[] }, subject: MockExamSubject, field: keyof MockExamRecord, value: string) => void;
-  onDeleteSession: (sessionKey: string) => void;
+  onUpdateSession?: (sessionKey: string, field: "examName" | "examType" | "year" | "month", value: string) => void;
+  onUpdateRecord?: (session: { key: string; rows: MockExamRecord[] }, subject: MockExamSubject, field: keyof MockExamRecord, value: string) => void;
+  onDeleteSession?: (sessionKey: string) => void;
+  readOnly?: boolean;
 }) {
   if (!sessions.length) {
     return <div className="px-3 py-10 text-center text-muted">시험 추가 버튼을 눌러 모의고사/수능 성적을 입력하세요.</div>;
@@ -223,7 +261,7 @@ function MockExamMatrix({
           <th className="border border-line px-3 py-3">영어</th>
           <th className="border border-line px-3 py-3" colSpan={2}>탐구</th>
           <th className="border border-line px-3 py-3">제2외국어/한문</th>
-          <th className="border border-line px-3 py-3 print:hidden">관리</th>
+          {!readOnly ? <th className="border border-line px-3 py-3 print:hidden">관리</th> : null}
         </tr>
       </thead>
       <tbody>
@@ -233,26 +271,33 @@ function MockExamMatrix({
             <tr className="border-b border-line" key={`${session.key}-${metric.key}`}>
               {metricIndex === 0 ? (
                 <td className="w-[160px] border border-line bg-slate-100 px-2 py-2 align-middle" rowSpan={MATRIX_METRICS.length}>
-                  <div className="grid gap-2">
-                    <input className="field text-center font-extrabold" value={base?.examName ?? ""} onChange={(event) => onUpdateSession(session.key, "examName", event.target.value)} />
-                    <div className="grid grid-cols-2 gap-1">
-                      <input className="field text-center" value={base?.year ?? ""} onChange={(event) => onUpdateSession(session.key, "year", event.target.value)} />
-                      <input className="field text-center" value={base?.month ?? ""} onChange={(event) => onUpdateSession(session.key, "month", event.target.value)} />
+                  {readOnly ? (
+                    <div className="text-center">
+                      <p className="font-extrabold text-ink">{base?.examName || `${base?.year ?? "-"}년 ${base?.month ?? "-"}월 ${base?.examType ?? ""}`}</p>
+                      <p className="mt-2 text-xs font-bold text-muted">{base?.year ?? "-"}년 {base?.month ?? "-"}월 · {base?.examType ?? "-"}</p>
                     </div>
-                    <select className="field text-center" value={base?.examType ?? "모의고사"} onChange={(event) => onUpdateSession(session.key, "examType", event.target.value)}>
-                      <option>모의고사</option>
-                      <option>수능</option>
-                    </select>
-                  </div>
+                  ) : (
+                    <div className="grid gap-2">
+                      <input className="field text-center font-extrabold" value={base?.examName ?? ""} onChange={(event) => onUpdateSession?.(session.key, "examName", event.target.value)} />
+                      <div className="grid grid-cols-2 gap-1">
+                        <input className="field text-center" value={base?.year ?? ""} onChange={(event) => onUpdateSession?.(session.key, "year", event.target.value)} />
+                        <input className="field text-center" value={base?.month ?? ""} onChange={(event) => onUpdateSession?.(session.key, "month", event.target.value)} />
+                      </div>
+                      <select className="field text-center" value={base?.examType ?? "모의고사"} onChange={(event) => onUpdateSession?.(session.key, "examType", event.target.value)}>
+                        <option>모의고사</option>
+                        <option>수능</option>
+                      </select>
+                    </div>
+                  )}
                 </td>
               ) : null}
               <td className="w-[110px] border border-line bg-slate-100 px-3 py-2 text-center font-bold">{metric.label}</td>
               {MATRIX_SUBJECTS.map((subject) => (
-                <MockExamMatrixCell key={`${session.key}-${subject}-${metric.key}`} session={session} subject={subject} metric={metric.key} onUpdateRecord={onUpdateRecord} />
+                <MockExamMatrixCell key={`${session.key}-${subject}-${metric.key}`} session={session} subject={subject} metric={metric.key} onUpdateRecord={onUpdateRecord} readOnly={readOnly} />
               ))}
-              {metricIndex === 0 ? (
+              {!readOnly && metricIndex === 0 ? (
                 <td className="border border-line px-2 py-2 text-center print:hidden" rowSpan={MATRIX_METRICS.length}>
-                  <button className="btn-danger" type="button" onClick={() => onDeleteSession(session.key)}>×</button>
+                  <button className="btn-danger" type="button" onClick={() => onDeleteSession?.(session.key)}>×</button>
                 </td>
               ) : null}
             </tr>
@@ -267,16 +312,27 @@ function MockExamMatrixCell({
   session,
   subject,
   metric,
-  onUpdateRecord
+  onUpdateRecord,
+  readOnly = false
 }: {
   session: { key: string; rows: MockExamRecord[] };
   subject: MockExamSubject;
   metric: keyof MockExamRecord;
-  onUpdateRecord: (session: { key: string; rows: MockExamRecord[] }, subject: MockExamSubject, field: keyof MockExamRecord, value: string) => void;
+  onUpdateRecord?: (session: { key: string; rows: MockExamRecord[] }, subject: MockExamSubject, field: keyof MockExamRecord, value: string) => void;
+  readOnly?: boolean;
 }) {
   const record = session.rows.find((row) => row.subject === subject);
   const value = record?.[metric] ?? "";
   const isNumber = metric === "rawScore" || metric === "standardScore" || metric === "percentile" || metric === "grade";
+  const emphasis = metric === "percentile" || metric === "grade";
+
+  if (readOnly) {
+    return (
+      <td className={`min-w-[110px] border border-line px-3 py-2 text-center ${emphasis ? "font-extrabold text-teal-750" : ""}`}>
+        {value === "" ? "-" : value}
+      </td>
+    );
+  }
 
   return (
     <td className="min-w-[110px] border border-line px-1.5 py-1.5">
@@ -287,9 +343,59 @@ function MockExamMatrixCell({
         placeholder={subject === "탐구1" ? "탐구1" : subject === "탐구2" ? "탐구2" : ""}
         type={isNumber ? "number" : "text"}
         value={value}
-        onChange={(event) => onUpdateRecord(session, subject, metric, event.target.value)}
+        onChange={(event) => onUpdateRecord?.(session, subject, metric, event.target.value)}
       />
     </td>
+  );
+}
+
+function MockExamReadOnlySummary({ sessions }: { sessions: { key: string; rows: MockExamRecord[] }[] }) {
+  if (!sessions.length) {
+    return <div className="px-3 py-10 text-center text-muted">표시할 모의고사/수능 성적이 없습니다.</div>;
+  }
+
+  return (
+    <table className="w-full min-w-[1080px] border-collapse text-xs">
+      <thead>
+        <tr className="bg-slate-100 text-center font-extrabold text-ink">
+          <th className="w-[150px] border border-line px-3 py-3">시험명</th>
+          {MATRIX_SUBJECTS.map((subject) => (
+            <th className="border border-line px-3 py-3" key={subject}>{subject}</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {sessions.map((session) => {
+          const base = session.rows[0];
+          return (
+            <tr className="align-top" key={session.key}>
+              <td className="border border-line bg-slate-50 px-3 py-3 text-center">
+                <p className="font-extrabold text-ink">{base?.examName || `${base?.year ?? "-"}년 ${base?.month ?? "-"}월 ${base?.examType ?? ""}`}</p>
+                <p className="mt-1 font-bold text-muted">{base?.year ?? "-"}년 {base?.month ?? "-"}월 · {base?.examType ?? "-"}</p>
+              </td>
+              {MATRIX_SUBJECTS.map((subject) => {
+                const record = session.rows.find((row) => row.subject === subject);
+                return (
+                  <td className="border border-line px-3 py-3 text-center" key={`${session.key}-${subject}`}>
+                    <p className="min-h-4 font-extrabold text-ink">{record?.selectedCourse || "-"}</p>
+                    <div className="mt-2 grid grid-cols-2 gap-x-2 gap-y-1 text-muted">
+                      <span>원점수</span>
+                      <strong className="text-ink">{formatNullable(record?.rawScore)}</strong>
+                      <span>표준</span>
+                      <strong className="text-ink">{formatNullable(record?.standardScore)}</strong>
+                      <span>백분위</span>
+                      <strong className="text-teal-750">{formatNullable(record?.percentile, "%")}</strong>
+                      <span>등급</span>
+                      <strong className="text-teal-750">{formatNullable(record?.grade, "등급")}</strong>
+                    </div>
+                  </td>
+                );
+              })}
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
   );
 }
 

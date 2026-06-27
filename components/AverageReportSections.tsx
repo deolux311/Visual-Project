@@ -46,7 +46,9 @@ export default function AverageReportSections({ records, gradeScale }: { records
                 <XAxis dataKey="key" />
                 <YAxis domain={[1, gradeScale]} reversed tickCount={gradeScale} />
                 <Tooltip formatter={(value) => formatGrade(Number(value))} />
-                <Line type="monotone" dataKey="average" stroke="#0f766e" strokeWidth={3} connectNulls dot={{ r: 4 }} />
+                <Line type="monotone" dataKey="average" stroke="#0f766e" strokeWidth={3} connectNulls dot={{ r: 4 }}>
+                  <LabelList dataKey="average" position="top" formatter={(value: number | null) => (Number.isFinite(Number(value)) ? Number(value).toFixed(2) : "")} className="fill-slate-700 text-xs font-bold" />
+                </Line>
               </LineChart>
             </ResponsiveContainer>
           </ChartBox>
@@ -115,11 +117,18 @@ export default function AverageReportSections({ records, gradeScale }: { records
         </div>
         <MatrixTable
           firstColumn="교과"
-          rows={courseSemester.map((row) => ({
-            key: row.course,
-            values: SEMESTER_ORDER.map((semester) => formatGrade(row.semesters[semester] ?? null)),
-            total: formatGrade(row.average)
-          }))}
+          rows={[
+            ...courseSemester.map((row) => ({
+              key: row.course,
+              values: SEMESTER_ORDER.map((semester) => formatGrade(row.semesters[semester] ?? null)),
+              total: formatGrade(row.average)
+            })),
+            {
+              key: "평균",
+              values: SEMESTER_ORDER.map((semester) => formatGrade(weightedAverage(validRecords(records, gradeScale).filter((record) => `${record.year}-${record.semester}` === semester), gradeScale))),
+              total: formatGrade(weightedAverage(records, gradeScale))
+            }
+          ]}
         />
       </section>
 
@@ -335,8 +344,10 @@ function MatrixTable({
           </tr>
         </thead>
         <tbody>
-          {rows.map((row, rowIndex) => (
-            <tr className="border-t border-line" key={row.key}>
+          {rows.map((row, rowIndex) => {
+            const isAverageRow = row.key === "평균";
+            return (
+            <tr className={`border-t border-line ${isAverageRow ? "bg-teal-650/10" : ""}`} key={row.key}>
               {(row.leadingValues ?? []).map((value, index) => {
                 const shouldMerge = index < mergeLeadingColumnCount;
                 if (shouldMerge && !spans.has(rowIndex)) return null;
@@ -350,12 +361,13 @@ function MatrixTable({
                   </td>
                 );
               })}
-              <td className="px-3 py-3 font-extrabold">{row.key}</td>
+              <td className={`px-3 py-3 font-extrabold ${isAverageRow ? "text-teal-750" : ""}`}>{row.key}</td>
               {afterFirstColumn ? <td className="px-3 py-3">{row.afterKey}</td> : null}
               {row.values.map((value, index) => <td className="px-3 py-3 text-center" key={`${row.key}-${index}`}>{value}</td>)}
-              <td className="bg-slate-50 px-3 py-3 text-center font-extrabold text-teal-750">{row.total}</td>
+              <td className={`${isAverageRow ? "bg-teal-650/10" : "bg-slate-50"} px-3 py-3 text-center font-extrabold text-teal-750`}>{row.total}</td>
             </tr>
-          ))}
+          );
+          })}
         </tbody>
       </table>
     </div>

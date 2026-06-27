@@ -4,13 +4,17 @@ export const sampleStudent: StudentInfo = {
   name: "김하늘",
   gender: "여성",
   region: "서울",
+  schoolOwnership: "사립",
   schoolType: "일반고",
+  schoolGender: "남녀공학",
   school: "한빛고등학교",
   grade: "2학년",
   track: "인문",
+  schoolWebsite: "https://www.school.go.kr",
   targetUniversity: "서울 주요 대학",
   targetMajor: "사회학과",
-  analysisDate: new Date().toISOString().slice(0, 10)
+  analysisDate: new Date().toISOString().slice(0, 10),
+  consultant: ""
 };
 
 export const sampleGrades: GradeRecord[] = [
